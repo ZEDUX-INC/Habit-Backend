@@ -75,7 +75,7 @@ class ResetPasswordViewset(viewsets.ViewSet):
                 signer = signing.TimestampSigner()
                 user = get_object_or_404(CustomUser,email=serializer.data.get("email"))
                 data =  signer.unsign_object(user.reset_token, max_age=max_age)
-                assert ((serializer.data.get("token") == data.get("token")), "Invalid token")
+                assert (serializer.data.get("token") == data.get("token"), "Invalid token")
                 return Response(data=serializer.data, status=HTTP_200_OK)
             except signing.SignatureExpired:
                 return Response(data={"status": "failure", "message":"token has expired"}, status=HTTP_403_FORBIDDEN)
