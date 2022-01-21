@@ -1,6 +1,6 @@
 name: Django application
 
-on: 
+on:
   push:
     branches:
     - staging
@@ -28,5 +28,3 @@ jobs:
     - name: Test 
       run: |
         pytest
-done
-
