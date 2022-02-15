@@ -9,11 +9,14 @@ from rest_framework_simplejwt.views import (
 
 from drf_yasg.views import get_schema_view
 
-from .views import UserViewset, ResetPasswordViewset
+from .views import (
+  UserViewset, 
+  ResetPasswordViewset,
+)
 
 router  = routers.DefaultRouter()
-router.register('users', UserViewset)
 router.register('account', ResetPasswordViewset, "reset-password")
+router.register('account/users', UserViewset)
 
 
 urlpatterns = [

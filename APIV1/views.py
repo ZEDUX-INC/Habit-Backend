@@ -2,6 +2,7 @@ import random
 from datetime import timedelta
 
 from django.core import signing
+from django.contrib.auth import logout
 
 from rest_framework.decorators import action
 from rest_framework import viewsets
@@ -15,11 +16,36 @@ from UserApp.models import CustomUser
 
 from .serializers import RPPasswordSerializer, RPTokenSerializer, UserSerializer, RPEmailSerializer
 
+
 class UserViewset(viewsets.ModelViewSet):
     # use this to remove admin and staff from customer api
-    # queryset = CustomUser.objects.filter(is_staff=False, is_superuser=False)
-    queryset =  CustomUser.objects.all()
-    serializer_class =  UserSerializer
+    queryset = CustomUser.objects.filter(is_staff=False, is_superuser=False, is_active=True)
+    serializer_class = UserSerializer
+
+    @action(detail=True, methods=['get'], url_name="activate", url_path="activate", queryset=CustomUser.objects.filter(is_staff=False, is_superuser=False))
+    def activate_email(self, request, *args, **kwargs):
+        """Activate User Email Before Login is Allowed"""
+        user =  self.get_object()
+        user.is_active = True
+        user.save()
+        serializer = self.serializer_class(instance=user)
+        return Response(serializer.data, status=HTTP_200_OK) 
+    
+    @action(detail=False, methods=['post'])
+    def logout(self, request, *args, **kwargs):
+        """Log user out"""
+        if request.user.is_authenticated:
+            logout(request.user)
+        return Response(data={"status": "success"}, status=HTTP_200_OK)
+
+    def perform_destroy(self, instance):
+        instance.is_active = False
+        instance.save()
+
+    def perform_create(self, serializer):
+        user = super().perform_create(serializer)
+        # activate a celery task at this point to send an email to the user
+        return user
 
 
 class ResetPasswordViewset(viewsets.ViewSet):
