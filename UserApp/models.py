@@ -21,6 +21,9 @@ class CustomUser(AbstractUser):
     location =  models.CharField(max_length=100, null=True, blank=True)
     reset_token =  models.CharField(max_length=150, null=True, blank=True)
 
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username', 'password']
+
     class Meta(AbstractUser.Meta):
         abstract = False
 

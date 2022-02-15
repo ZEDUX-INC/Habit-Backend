@@ -14,7 +14,8 @@ class UserSerializer(serializers.ModelSerializer):
              "dob", "profile_picture", "date_joined",
              "last_login",
         ]
-        read_only_fields =  ["id"]
+
+        read_only_fields =  ["id", "date_joined", "last_login"]
         extra_kwargs = {'password': {'write_only': True}}
 
 
@@ -24,6 +25,7 @@ class UserSerializer(serializers.ModelSerializer):
         
         user = self.Meta.model(**temp)
         user.set_password(validated_data['password'])
+        user.is_active = False
         user.save()
         return user
     
