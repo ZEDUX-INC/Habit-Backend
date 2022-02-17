@@ -1,20 +1,22 @@
 from django.urls import path
 
 from rest_framework import routers
-from rest_framework import permissions
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
 )
 
-from drf_yasg.views import get_schema_view
 
-from .views import UserViewset, ResetPasswordViewset
+from APIV1.UserApp.views import (
+  UserViewset, 
+  ResetPasswordViewset,
+)
 
 router  = routers.DefaultRouter()
-router.register('users', UserViewset)
 router.register('account', ResetPasswordViewset, "reset-password")
+router.register('account/users', UserViewset)
 
+app_name = "apiv1"
 
 urlpatterns = [
   *router.urls,
