@@ -1,6 +1,10 @@
+import random
+from typing import Tuple
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils.translation import gettext_lazy as _
+
+from django.core import signing
 
 class CustomUser(AbstractUser):
     
@@ -27,5 +31,10 @@ class CustomUser(AbstractUser):
     class Meta(AbstractUser.Meta):
         abstract = False
 
+    def generate_resettoken(self) -> Tuple[str, str]:
+        unsigned_token = random.randint(100000, 999999)
+        signer = signing.TimestampSigner()
+        signed_token = signer.sign_object({"token": unsigned_token, "email": self.email})
+        return unsigned_token, signed_token
 
 
