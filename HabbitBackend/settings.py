@@ -173,6 +173,7 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SECURE_SSL_REDIRECT = True
 
 
+
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
@@ -180,4 +181,3 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer', 'Basic', 'Token'),
     'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
 }
-
