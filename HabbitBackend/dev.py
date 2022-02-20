@@ -37,12 +37,9 @@ SECRET_KEY = os.getenv(
     'SECRET_KEY', 'g!^gs#bib&6sn5ow5i&ho0bj4dlz(y%v9!h-fnmh#6h=u_&ip=')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env("DEBUG")
+DEBUG = False
 
-ALLOWED_HOSTS = [
-    "habbitapi.herokuapp.com",
-    "127.0.0.1"
-]
+ALLOWED_HOSTS = ["127.0.0.1"]
 
 
 # Application definition
@@ -172,6 +169,7 @@ REST_FRAMEWORK = {
 # SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 # SECURE_SSL_REDIRECT = True
 
+
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
@@ -179,3 +177,4 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer', 'Basic', 'Token'),
     'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
 }
+

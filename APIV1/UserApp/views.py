@@ -1,4 +1,3 @@
-import random
 from datetime import timedelta
 
 from django.core import signing
@@ -9,6 +8,7 @@ from rest_framework import viewsets
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.status import *
+from rest_framework import exceptions
 
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
@@ -22,10 +22,16 @@ class UserViewset(viewsets.ModelViewSet):
     queryset = CustomUser.objects.filter(is_staff=False, is_superuser=False, is_active=True)
     serializer_class = UserSerializer
 
-    @action(detail=True, methods=['get'], url_name="activate", url_path="activate", queryset=CustomUser.objects.filter(is_staff=False, is_superuser=False))
+    @action(
+        detail=True, 
+        methods=['get'], 
+        url_name="activate", 
+        url_path="activate", 
+        queryset=CustomUser.objects.filter(is_staff=False, is_superuser=False)
+    )
     def activate_email(self, request, *args, **kwargs):
         """Activate User Email Before Login is Allowed"""
-        user =  self.get_object()
+        user = self.get_object()
         user.is_active = True
         user.save()
         serializer = self.serializer_class(instance=user)
@@ -42,11 +48,6 @@ class UserViewset(viewsets.ModelViewSet):
         instance.is_active = False
         instance.save()
 
-    def perform_create(self, serializer):
-        user = super().perform_create(serializer)
-        # activate a celery task at this point to send an email to the user
-        return user
-
 
 class ResetPasswordViewset(viewsets.ViewSet):
 
@@ -62,25 +63,23 @@ class ResetPasswordViewset(viewsets.ViewSet):
         detail=False, 
         methods=["POST"], 
         url_path="resetpassword/gettoken",
-        url_name="resetpassword_gettoken",
+        url_name="gettoken",
     )
-    def email(self, request):
-        serializer  =  RPEmailSerializer(data=request.data)
-        if serializer.is_valid():
-            # probably send an email signal at this point
-            mail =  serializer.validated_data.get("email")
-            user = get_object_or_404(CustomUser, email=mail)
-            unsigned_token = random.randint(100000, 999999)
-            signer = signing.TimestampSigner()
-            signed_token = signer.sign_object({"token": unsigned_token, "email": mail})
-            user.reset_token = signed_token
-            user.save()
-            return Response(data={"token": unsigned_token}, status=HTTP_200_OK)
-        return Response(data=serializer.errors, status=HTTP_400_BAD_REQUEST)
+    def get_token(self, request):
+        """Generate reset password token."""
+        serializer = RPEmailSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        # probably send an email signal at this point
+        mail =  serializer.validated_data.get("email")
+        user = get_object_or_404(CustomUser, email=mail)
+        raw_token, token = user.generate_resettoken()
+        user.reset_token = token
+        user.save()
+        return Response(data={"token": raw_token}, status=HTTP_200_OK)
 
     
     @swagger_auto_schema(
-        operation_id="resetpassword_validatetoken",
+        operation_id="validatetoken",
         request_body=RPTokenSerializer,
         responses={
             200: openapi.Response("Response", RPTokenSerializer),
@@ -91,22 +90,25 @@ class ResetPasswordViewset(viewsets.ViewSet):
         detail=False, 
         methods=["POST"], 
         url_path=r"resetpassword/validatetoken",
-        url_name="resetpassword_validatetoken",
+        url_name="validatetoken",
     )
     def validate_token(self, request):
+        """confirm that a token is valid."""
         serializer =  RPTokenSerializer(data=request.data)
-        if serializer.is_valid():
-            try:
-                max_age =  timedelta(minutes=5)
-                signer = signing.TimestampSigner()
-                user = get_object_or_404(CustomUser,email=serializer.data.get("email"))
-                data =  signer.unsign_object(user.reset_token, max_age=max_age)
-                assert (serializer.data.get("token") == data.get("token")), "Invalid token"
-                return Response(data=serializer.data, status=HTTP_200_OK)
-            except signing.SignatureExpired:
-                return Response(data={"status": "failure", "message":"token has expired"}, status=HTTP_403_FORBIDDEN)
-        else:
-            return Response(serializer.errors, status=HTTP_403_FORBIDDEN)
+        serializer.is_valid(raise_exception=True)
+        user = get_object_or_404(CustomUser, email=serializer.data.get("email"))
+
+        try:
+            max_age = timedelta(minutes=10)
+            signer = signing.TimestampSigner()
+            data = signer.unsign_object(user.reset_token, max_age=max_age)
+            if (serializer.data.get("token") == data.get("token")) :
+                raise exceptions.ValidationError({"token": ["Invalid token"]})
+            return Response(data=serializer.data, status=HTTP_200_OK)
+        except signing.SignatureExpired:
+            user.reset_token = None
+            user.save()
+            return Response(data={"status": "failure", "message":"token has expired"}, status=HTTP_403_FORBIDDEN)
 
 
     @swagger_auto_schema(
@@ -124,18 +126,19 @@ class ResetPasswordViewset(viewsets.ViewSet):
         url_name="resetpassword",
     )
     def reset_password(self, request):
+        """Reset Users Password using generated token."""
         serializer = RPPasswordSerializer(data=request.data)
-        if serializer.is_valid():
-            res = self.validate_token(request)
-            if (res.status_code == 200):
-                user = get_object_or_404(CustomUser, email=serializer.data.get("email"))
-                user.set_password(serializer.validated_data.get("password"))
-                user.save()
-                return Response({"status": "success", "message": "Password reset"}, status=HTTP_202_ACCEPTED)
-            else :
-                return res
-        else:
-            return  Response(serializer.errors, status=HTTP_403_FORBIDDEN)
+        serializer.is_valid(raise_exception=True)
+        res = self.validate_token(request)
+
+        if (res.status_code == 200):
+            user = get_object_or_404(CustomUser, email=serializer.data.get("email"))
+            user.set_password(serializer.validated_data.get("password"))
+            user.reset_token = None
+            user.save()
+            return Response({"status": "success", "message": "Password reset"}, status=HTTP_200_OK)
+        else :
+            return res
 
 
 
