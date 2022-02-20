@@ -49,7 +49,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'django_celery_beat',
-    'django_celery_results',
+    # 'django_celery_results',
     'drf_yasg',
     'django_filters',
     'UserApp',
@@ -171,3 +171,5 @@ CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'Africa/Lagos'
+
+MYPY_DJANGO_CONFIG = os.path.join(BASE_DIR, 'mypy.ini')

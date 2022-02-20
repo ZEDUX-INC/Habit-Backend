@@ -1,3 +1,4 @@
+from typing import Any, Dict
 from rest_framework import serializers
 from UserApp.models import CustomUser
 
@@ -16,21 +17,21 @@ class UserSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'date_joined', 'last_login']
         extra_kwargs = {'password': {'write_only': True}}
 
-    def change_password(self, user: CustomUser, password: str):
+    def change_password(self, user: CustomUser, password: str) -> CustomUser:
         if password:
             user.set_password(password)
             user.save()
             # TODO: you can a change password signal here
         return user
 
-    def create(self, validated_data: dict):
+    def create(self, validated_data: Dict[str, Any]) -> CustomUser:
         user = super().create(validated_data)
         self.change_password(user, validated_data.get('password', None))
         user.is_active = False
         user.save()
         return user
 
-    def update(self, instance, validated_data):
+    def update(self, instance: CustomUser, validated_data: Dict[str, Any]) -> CustomUser:
         user = super().update(instance, validated_data)
         self.change_password(user, validated_data.get('password', None))
         return user

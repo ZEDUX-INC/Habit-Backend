@@ -34,9 +34,9 @@ class CustomUser(AbstractUser):
     class Meta(AbstractUser.Meta):
         abstract = False
 
-    def generate_resettoken(self) -> Tuple[str, str]:
+    def generate_resettoken(self) -> Tuple[int, str]:
         unsigned_token = random.randint(100000, 999999)
         signer = signing.TimestampSigner()
-        signed_token = signer.sign_object(
+        signed_token = signer.sign_object(  # type:ignore
             {'token': unsigned_token, 'email': self.email})
         return unsigned_token, signed_token
