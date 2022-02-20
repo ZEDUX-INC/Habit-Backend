@@ -9,7 +9,7 @@ Babel==2.6.0
 backcall==0.2.0
 backports.zoneinfo==0.2.1
 billiard==3.6.4.0
-celery==5.1.2
+celery==5.2.2
 certifi==2021.10.8
 cffi==1.15.0
 cfgv==3.3.1
