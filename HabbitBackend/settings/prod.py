@@ -55,8 +55,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'drf_yasg',
     'rest_framework_simplejwt',
+    'drf_yasg',
     'django_filters',
     'UserApp',
     'APIV1',
@@ -100,15 +100,8 @@ ASGI_APPLICATION = 'HabbitBackend.asgi.application'
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    }
+    'default': dj_database_url.config(conn_max_age=1000) 
 }
-
-prod_db = dj_database_url.config(conn_max_age=500)
-
-DATABASES['default'].update(prod_db)
 
 
 # Password validation
@@ -146,6 +139,9 @@ USE_L10N = True
 USE_TZ = True
 
 
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_SSL_REDIRECT = True
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
@@ -169,8 +165,6 @@ REST_FRAMEWORK = {
     )
 }
 
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-SECURE_SSL_REDIRECT = True
 
 
 SIMPLE_JWT = {
