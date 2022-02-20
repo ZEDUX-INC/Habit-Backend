@@ -15,7 +15,7 @@ import environ
 from datetime import timedelta
 
 # reading .env file
-environ.Env.read_env(".env")
+environ.Env.read_env('.env')
 
 env = environ.Env(
     # set casting, default value
@@ -36,7 +36,7 @@ SECRET_KEY = 'g!^gs#bib&6sn5ow5i&ho0bj4dlz(y%v9!h-fnmh#6h=u_&ip='
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ["127.0.0.1"]
+ALLOWED_HOSTS = ['127.0.0.1']
 
 # Application definition
 INSTALLED_APPS = [
@@ -119,7 +119,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
-AUTH_USER_MODEL="UserApp.CustomUser"
+AUTH_USER_MODEL = 'UserApp.CustomUser'
 
 # Internationalization
 # https://docs.djangoproject.com/en/3.0/topics/i18n/
@@ -166,9 +166,8 @@ SIMPLE_JWT = {
 }
 
 CELERY_BROKER_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379')
-CELERY_RESULT_BACKEND = os.environ.get("REDIS_URL", 'django-db')
+CELERY_RESULT_BACKEND = os.environ.get('REDIS_URL', 'django-db')
 CELERY_ACCEPT_CONTENT = ['application/json']
-CELERY_TASK_SERIALIZER = "json"
-CELERY_RESULT_SERIALIZER = "json"
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'Africa/Lagos'
-
