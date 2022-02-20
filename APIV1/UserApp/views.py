@@ -1,4 +1,5 @@
 from datetime import timedelta
+from typing import Any, Dict, List
 
 from django.core import signing
 from django.contrib.auth import logout
@@ -9,7 +10,7 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework import exceptions
-
+from rest_framework.request import Request
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from UserApp.models import CustomUser
@@ -30,7 +31,7 @@ class UserViewset(viewsets.ModelViewSet):
         url_path='activate',
         queryset=CustomUser.objects.filter(is_staff=False, is_superuser=False)
     )
-    def activate_email(self, request, *args, **kwargs):
+    def activate_email(self, request: Request, *args: List[Any], **kwargs: Dict[Any, Any]) -> Response:
         """Activate User Email Before Login is Allowed"""
         user = self.get_object()
         user.is_active = True
@@ -39,13 +40,13 @@ class UserViewset(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['post'])
-    def logout(self, request, *args, **kwargs):
+    def logout(self, request: Request, *args: List[Any], **kwargs: Dict[Any, Any]) -> Response:
         """Log user out"""
         if request.user.is_authenticated:
             logout(request.user)
         return Response(data={'status': 'success'}, status=status.HTTP_200_OK)
 
-    def perform_destroy(self, instance):
+    def perform_destroy(self, instance: Any) -> None:
         instance.is_active = False
         instance.save()
 
@@ -66,7 +67,7 @@ class ResetPasswordViewset(viewsets.ViewSet):
         url_path='resetpassword/gettoken',
         url_name='gettoken',
     )
-    def get_token(self, request):
+    def get_token(self, request: Request) -> Response:
         """Generate reset password token."""
         serializer = RPEmailSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -92,7 +93,7 @@ class ResetPasswordViewset(viewsets.ViewSet):
         url_path=r'resetpassword/validatetoken',
         url_name='validatetoken',
     )
-    def validate_token(self, request):
+    def validate_token(self, request: Request) -> Response:
         """confirm that a token is valid."""
         serializer = RPTokenSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -102,7 +103,8 @@ class ResetPasswordViewset(viewsets.ViewSet):
         try:
             max_age = timedelta(minutes=10)
             signer = signing.TimestampSigner()
-            data = signer.unsign_object(user.reset_token, max_age=max_age)
+            data = signer.unsign_object(  # type:ignore
+                user.reset_token, max_age=max_age)
             if (serializer.data.get('token') == data.get('token')):
                 raise exceptions.ValidationError({'token': ['Invalid token']})
             return Response(data=serializer.data, status=status.HTTP_200_OK)
@@ -125,7 +127,7 @@ class ResetPasswordViewset(viewsets.ViewSet):
         url_path='resetpassword',
         url_name='resetpassword',
     )
-    def reset_password(self, request):
+    def reset_password(self, request: Request) -> Response:
         """Reset Users Password using generated token."""
         serializer = RPPasswordSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
