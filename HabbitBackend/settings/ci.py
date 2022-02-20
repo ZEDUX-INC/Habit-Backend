@@ -2,7 +2,6 @@ import dj_database_url
 from HabbitBackend.settings.dev import *
 
 
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
