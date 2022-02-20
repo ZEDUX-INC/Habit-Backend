@@ -94,7 +94,7 @@ sqlparse==0.4.2
 toml==0.10.2
 tomli==2.0.1
 traitlets==5.1.1
-Twisted==21.7.0
+Twisted==22.1.0
 txaio==21.2.1
 types-pytz==2021.3.5
 types-PyYAML==6.0.4
