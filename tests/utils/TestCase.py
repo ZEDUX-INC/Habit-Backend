@@ -6,7 +6,7 @@ from rest_framework import serializers
 class SerializerTestCase(TestCase):
     """Custom Test Case for Serializers."""
 
-    def check_required_fields(self, serializer: serializers.Serializer,fields:Sequence[str]):
+    def check_required_fields(self, serializer: serializers.Serializer, fields: Sequence[str]):
         """
             Check if a list of fields is required in a form.
 
@@ -16,8 +16,8 @@ class SerializerTestCase(TestCase):
         for field_name, field_instance in serializer().get_fields().items():
             if field_instance.required:
                 self.assertIn(field_name, fields)
-    
-    def check_non_required_fields(self, serializer: serializers.Serializer,fields:Sequence[str]):
+
+    def check_non_required_fields(self, serializer: serializers.Serializer, fields: Sequence[str]):
         """
             Check if a list of fields is not required in a form.
 
@@ -47,4 +47,5 @@ class SerializerTestCase(TestCase):
         for entry in entries:
             serial = serializer(entries=entry.get('data'), **kwargs)
             self.assertFalse(serial.is_valid(), msg=entries['label'])
-            self.assertEqual(serial.errors[entries['error'][0]], entries['error'][1], msg=entries['label'])
+            self.assertEqual(
+                serial.errors[entries['error'][0]], entries['error'][1], msg=entries['label'])

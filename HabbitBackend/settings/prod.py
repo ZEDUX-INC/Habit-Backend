@@ -17,7 +17,7 @@ from datetime import timedelta
 from HabbitBackend.settings.dev import *
 
 # reading .env file
-environ.Env.read_env(".env")
+environ.Env.read_env('.env')
 
 env = environ.Env(
     # set casting, default value
@@ -37,10 +37,10 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env("DEBUG")
+DEBUG = env('DEBUG')
 
 
-ALLOWED_HOSTS = ["habbitapi.herokuapp.com"]
+ALLOWED_HOSTS = ['habbitapi.herokuapp.com']
 
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
@@ -50,5 +50,5 @@ SECURE_SSL_REDIRECT = True
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
 DATABASES = {
-    'default': dj_database_url.config(conn_max_age=1000) 
+    'default': dj_database_url.config(conn_max_age=1000)
 }
