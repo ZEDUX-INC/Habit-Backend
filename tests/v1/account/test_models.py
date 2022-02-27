@@ -1,7 +1,7 @@
 import pytest
 from datetime import timedelta
 
-from UserApp.models import CustomUser
+from account.models import CustomUser
 from django.test import TestCase
 from django.core import signing
 

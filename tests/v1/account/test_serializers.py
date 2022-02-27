@@ -1,12 +1,13 @@
 import pytest
 
 from rest_framework.status import *
-from UserApp.models import CustomUser
-from tests.v1.userapp.test_models import UserFactory
+from account.models import CustomUser
+from tests.v1.account.test_models import UserFactory
 from tests.utils.TestCase import SerializerTestCase
 
-from APIV1.UserApp.serializers import (
+from account.api.v1.serializers import (
     RPEmailSerializer,
+    UserFollowerSerializer,
     UserSerializer,
     RPTokenSerializer,
     RPPasswordSerializer
@@ -77,3 +78,24 @@ class TestRPPasswordSerializer(SerializerTestCase):
     def test_non_required_fields(self):
         self.check_non_required_fields(
             self.serializer, self.non_required_fields)
+
+
+@pytest.mark.django_db
+class TestUserFollowerSerializer(SerializerTestCase):
+    pytestmark = pytest.mark.django_db
+
+    def setUp(self) -> None:
+        self.user = UserFactory().create()
+        self.follower_user = UserFactory().create()
+        self.serializer = UserFollowerSerializer
+
+        self.INVALID_DATA = [
+
+        ]
+        self.VALID_DATA = [
+
+        ]
+        return super().setUp()
+
+    def test_to_representation(self):
+        serializer = self.serializer
