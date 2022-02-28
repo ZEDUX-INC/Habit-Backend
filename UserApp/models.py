@@ -1,9 +1,8 @@
 import random
-from typing import Sequence, Tuple, Any
+from typing import Tuple
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils.translation import gettext_lazy as _
-from django.db.models import QuerySet
 
 from django.core import signing
 
@@ -11,7 +10,6 @@ from django.core import signing
 class CustomUser(AbstractUser):
 
     id = models.AutoField(primary_key=True)
-
     email = models.EmailField(
         _('email address'),
         blank=False,
@@ -31,7 +29,7 @@ class CustomUser(AbstractUser):
     reset_token = models.CharField(max_length=150, null=True, blank=True)
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['password']
+    REQUIRED_FIELDS = ['username', 'password']
 
     class Meta(AbstractUser.Meta):
         abstract = False
@@ -42,33 +40,3 @@ class CustomUser(AbstractUser):
         signed_token = signer.sign_object(  # type:ignore
             {'token': unsigned_token, 'email': self.email})
         return unsigned_token, signed_token
-
-    def add_followers(self, followers: Sequence[Any]) -> None:
-        for follower in followers:
-            UserFollowing.objects.create(user=self, following_user=follower)
-
-    def remove_followers(self, followers: Sequence[Any]) -> None:
-        UserFollowing.objects.filter(
-            user=self, following_user__in=followers).delete()
-
-    def get_followers(self) -> QuerySet:
-        return UserFollowing.objects.filter(user=self)
-
-
-class UserFollowing(models.Model):
-    id = models.AutoField(primary_key=True)
-    user = models.ForeignKey(
-        CustomUser, related_name='following', on_delete=models.CASCADE)
-    following_user = models.ForeignKey(
-        CustomUser, related_name='followers', on_delete=models.CASCADE)
-    date_created = models.DateTimeField(auto_now_add=True, db_index=True)
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=['user', 'following_user'], name='unique_followers')
-        ]
-        ordering = ['-date_created']
-
-    def __str__(self) -> str:
-        return f'{self.user.email} follows {self.following_user.email}'

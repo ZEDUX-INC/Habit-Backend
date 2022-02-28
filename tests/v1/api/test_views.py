@@ -1,15 +1,14 @@
-import json
 from django.test import TestCase
 from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework.status import *
-from tests.v1.account.test_models import UserFactory
+from tests.v1.userapp.test_models import UserFactory
 from rest_framework_simplejwt.tokens import RefreshToken
 import pytest
 
 
 @pytest.mark.django_db
-class TestAuthViews(TestCase):
+class TestUserViews(TestCase):
     pytestmark = pytest.mark.django_db
     user = None
     client = APIClient()
@@ -24,11 +23,11 @@ class TestAuthViews(TestCase):
             'first_name': 'magin',
             'last_name': 'modi',
             'email': 'user2@example.com',
-            'password': '12345678',
+            'password': '123456',
         }
 
         response = self.client.post(
-            reverse('apiv1:auth-views-list'), data, content_type='application/json')
+            reverse('apiv1:customuser-list'), data, content_type='application/json')
         self.assertEqual(response.status_code, HTTP_201_CREATED)
 
         # assert that the user created is inactive
@@ -37,21 +36,12 @@ class TestAuthViews(TestCase):
 
     def test_logout(self):
         """Test user logout."""
-
-        user = UserFactory().create(is_active=True)
-        token = RefreshToken.for_user(user)
-        # print(token.access_token)
-
-        client = APIClient()
-        client.credentials(HTTP_AUTHORIZATION='Token ' +
-                           str(token.access_token))
-        data = json.dumps({'refresh_token': str(token)})
-        response = client.post(
-            reverse('apiv1:logout-user'), data, content_type='application/json')
+        response = self.client.post(
+            reverse('apiv1:customuser-logout'), None, content_type='application/json')
         self.assertEqual(response.status_code, HTTP_200_OK)
 
     def test_deactivate(self):
-        """Test deactivating a user."""
+        """Test deactivating user."""
 
         user = UserFactory().create(is_active=True)
         token = RefreshToken.for_user(user)
@@ -60,21 +50,20 @@ class TestAuthViews(TestCase):
         client.credentials(HTTP_AUTHORIZATION='Token ' +
                            str(token.access_token))
 
-        response = client.post(
-            reverse('apiv1:auth-views-deactivate', kwargs={'pk': user.id}),
+        response = client.delete(
+            reverse('apiv1:customuser-detail', kwargs={'pk': user.id}),
             None,
             content_type='application/json',
         )
-        self.assertEqual(response.status_code, HTTP_200_OK)
-
         user.refresh_from_db()
+        self.assertEqual(response.status_code, HTTP_204_NO_CONTENT)
         self.assertEqual(user.is_active, False)
 
     def test_activate_email(self):
         """Test activate user email endpoint."""
         user = UserFactory().create(is_active=False)
         response = self.client.get(reverse(
-            'apiv1:auth-views-activate', kwargs={'pk': user.id}), None, content_type='application/json')
+            'apiv1:customuser-activate', kwargs={'pk': user.id}), None, content_type='application/json')
         self.assertEqual(response.status_code, HTTP_200_OK)
 
         user.refresh_from_db()
@@ -125,8 +114,3 @@ class TestResetPasswordViewset(TestCase):
         self.assertEqual(response.status_code, HTTP_200_OK)
         user.refresh_from_db()
         self.assertIsNone(user.reset_token)
-
-
-class TestUserFollowerViews(TestCase):
-    def setUp(self) -> None:
-        return super().setUp()
