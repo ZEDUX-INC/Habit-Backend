@@ -28,7 +28,7 @@ jobs:
     - name: static Test
       run: |
         pre-commit run --all-files
-        mypy UserApp APIV1
+        mypy account APIV1
     - name: Unit Test
       run: |
         pytest
