@@ -17,10 +17,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
-    - name: Set up Python 3.8.12
+    - name: Set up Python 3.9.10
       uses: actions/setup-python@v1
       with:
-        python-version: 3.8.12
+        python-version: 3.9.10
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -28,7 +28,7 @@ jobs:
     - name: static Test
       run: |
         pre-commit run --all-files
-        mypy UserApp APIV1
+        # mypy account APIV1
     - name: Unit Test
       run: |
         pytest
