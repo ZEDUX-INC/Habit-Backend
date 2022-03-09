@@ -35,17 +35,17 @@ class SerializerTestCase(TestCase):
             :param serializer: Form to check validity on
         """
         for data in entries:
-            serial = serializer(data, **kwargs)
+            serial = serializer(data=data, **kwargs)
             self.assertTrue(serial.is_valid(True))
 
     def check_invalid_data(self, serializer: serializers.Serializer, entries: Sequence[dict], **kwargs) -> None:
         """
             Test data entries for invalidity in a form
-            :param  entries: data entries to be checked
+            :param entries: data entries to be checked
             :param serializer: Form to check invalidity on
         """
+        i = 0
         for entry in entries:
-            serial = serializer(entries=entry.get('data'), **kwargs)
-            self.assertFalse(serial.is_valid(), msg=entries['label'])
-            self.assertEqual(
-                serial.errors[entries['error'][0]], entries['error'][1], msg=entries['label'])
+            serial = serializer(data=entry.get('data'), **kwargs)
+            self.assertFalse(serial.is_valid(), msg=entry.get('label'))
+            self.assertDictEqual(serial.errors, entry['errors'])
