@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     'django_celery_beat',
+    'django_celery_results',
     'django_filters',
 
     # custome apps
@@ -75,7 +76,7 @@ ROOT_URLCONF = 'HabbitBackend.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [''],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -192,3 +193,10 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'Africa/Lagos'
 
 MYPY_DJANGO_CONFIG = os.path.join(BASE_DIR, 'mypy.ini')
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_USE_TLS = True
+EMAIL_PORT = os.environ.get('EMAIL_PORT', 587)
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '111111')
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'info@example.com')
