@@ -8,6 +8,7 @@ from account.models import UserFollowing
 from tests.v1.account.test_models import UserFactory
 from rest_framework_simplejwt.tokens import RefreshToken
 import pytest
+import mock
 
 
 @pytest.mark.django_db
@@ -94,10 +95,12 @@ class TestResetPasswordViewset(TestCase):
         user = UserFactory().create(is_active=True)
         data = {'email': user.email}
 
-        response = self.client.post(reverse(
-            'api-account-v1:reset-password-gettoken'), data, content_type='application/json')
-        self.assertEqual(response.status_code, HTTP_200_OK)
+        with mock.patch('account.api.v1.tasks.send_reset_password_otp_to_user_email_task.delay') as email_task:
+            response = self.client.post(reverse(
+                'api-account-v1:reset-password-gettoken'), data, content_type='application/json')
 
+        email_task.assert_called_once()
+        self.assertEqual(response.status_code, HTTP_200_OK)
         user.refresh_from_db()
         self.assertIsNotNone(user.reset_token)
 
