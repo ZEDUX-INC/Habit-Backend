@@ -14,3 +14,4 @@ DATABASES = {
 
 
 DATABASES['default'].update(dj_database_url.config(conn_max_age=1000))
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

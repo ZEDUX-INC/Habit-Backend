@@ -31,4 +31,4 @@ jobs:
         # mypy account APIV1
     - name: Unit Test
       run: |
-        pytest
+        pytest --reuse-db --no-migrations

@@ -26,6 +26,7 @@ from account.api.v1.serializers import (
     LogoutSerializer,
     UserFollowerSerializer,
 )
+from account.api.v1.tasks import send_reset_password_otp_to_user_email_task
 
 
 class AuthViewset(mixins.CreateModelMixin,
@@ -127,7 +128,9 @@ class ResetPasswordViewset(viewsets.ViewSet):
         raw_token, token = user.generate_resettoken()
         user.reset_token = token
         user.save()
-        # TODO: send email contaiing otp to the user at this point
+        send_reset_password_otp_to_user_email_task.delay(
+            user.email, raw_token)  # pragma no-cover
+        # TODO: stop sending the otp as part of the response
         return Response(data={'token': raw_token}, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
