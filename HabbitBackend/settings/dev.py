@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'django_celery_beat',
     'django_celery_results',
     'django_filters',
+    # 'django_storages',
 
     # custome apps
     'account.apps.AccountConfig',
@@ -153,7 +154,16 @@ STATICFILES_DIRS = (
 )
 
 #  Add configuration for static files storage using whitenoise
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATICFILES_STORAGE = 'storages.backends.s3boto3.S3StaticStorage'
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+
+AWS_ACCESS_KEY_ID = os.environ.get('AKIAS37NP6RMRWULFWOC')
+AWS_SECRET_ACCESS_KEY = os.environ.get(
+    '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')
+AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME')
+AWS_QUERYSTRING_AUTH = False
+
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
