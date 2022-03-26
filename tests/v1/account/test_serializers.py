@@ -26,14 +26,30 @@ class TestUserSerializer(SerializerTestCase):
         self.serializer = UserSerializer
         return super().setUp()
 
-    def test_create(self):
+    def test_create(self) -> None:
         data = {
             'username': 'Joseph', 'email': 'john@example.com', 'password': '12345678'
         }
+
         form = self.serializer(data=data)
+
         form.is_valid(raise_exception=True)
         user = form.save()
+
+        self.assertIsNotNone(form.token)
         self.assertEqual(CustomUser.objects.get(email=data['email']), user)
+
+    def test_to_representation(self) -> None:
+        serializer = self.serializer(instance=self.user)
+        data = serializer.to_representation(instance=self.user)
+        self.assertIsNone(data.get('auth_token'))
+
+        serializer = self.serializer(
+            data={'email': 'john@example.com', 'password': '12345678'})
+        serializer.is_valid()
+        new_user = serializer.save()
+        data = serializer.to_representation(instance=new_user)
+        self.assertIsNotNone(data.get('auth_token'))
 
 
 class TestRPEmailSerializer(SerializerTestCase):

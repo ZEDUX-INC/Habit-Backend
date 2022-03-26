@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, List, Union
 from django.db import DatabaseError
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -9,8 +9,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 
 class UserSerializer(serializers.ModelSerializer):
-    # password = serializers.CharField(
-    #     min_length=8, max_length=100, write_only=True)
+
+    token = None
 
     class Meta:
         model = CustomUser
@@ -34,14 +34,29 @@ class UserSerializer(serializers.ModelSerializer):
     def create(self, validated_data: Dict[str, Any]) -> CustomUser:
         user = super().create(validated_data)
         self.change_password(user, validated_data.get('password', None))
-        user.is_active = False
+        user.is_active = True
         user.save()
+        refresh_token = RefreshToken.for_user(user)
+
+        self.token = {
+            'refresh': str(refresh_token),
+            'access': str(refresh_token.access_token)
+        }
+
         return user
 
     def update(self, instance: CustomUser, validated_data: Dict[str, Any]) -> CustomUser:
         user = super().update(instance, validated_data)
         self.change_password(user, validated_data.get('password', None))
         return user
+
+    def to_representation(self, instance) -> Dict[str, Any]:
+        data = {**super().to_representation(instance)}
+
+        if self.token:
+            data.update({'auth_token': self.token})
+
+        return data
 
 
 class RPEmailSerializer(serializers.Serializer):

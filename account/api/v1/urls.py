@@ -13,15 +13,14 @@ from account.api.v1.views import (
     LogoutView,
     ListFollowersView,
     RetrieveFollowerView,
-    BlockFollowerView,
     ListCreateFollowingView,
     RetrieveRemoveFollowingView,
 )
 
 router = routers.DefaultRouter()
 router.register('account', ResetPasswordViewset, 'reset-password')
-router.register('account/users', AuthViewset, 'auth-views')
-router.register('account/users', UserViewset, 'user-views')
+router.register('account/signup', AuthViewset, 'auth-views')
+router.register('users', UserViewset, 'user-views')
 
 app_name = 'api-account-v1'
 
@@ -51,11 +50,6 @@ urlpatterns = [
         'users/<str:id>/followers/<str:follower_id>/',
         RetrieveFollowerView.as_view(),
         name='follower-details'
-    ),
-    path(
-        'users/<str:id>/followers/<str:follower_id>/block/',
-        BlockFollowerView.as_view(),
-        name='toggle-block-follower'
     ),
     path(
         'users/<str:id>/following/',

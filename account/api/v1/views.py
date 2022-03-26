@@ -31,39 +31,9 @@ from account.api.v1.tasks import send_reset_password_otp_to_user_email_task
 
 class AuthViewset(mixins.CreateModelMixin,
                   viewsets.GenericViewSet):
-    queryset = CustomUser.objects.all()
+    queryset = CustomUser.objects.filter(is_staff=False, is_superuser=False)
     serializer_class = UserSerializer
-
-    @action(
-        detail=True,
-        methods=['get'],
-        url_name='activate',
-        url_path='activate',
-        queryset=CustomUser.objects.filter(is_staff=False, is_superuser=False),
-    )
-    def activate_email(self, request: Request, *args: List[Any], **kwargs: Dict[Any, Any]) -> Response:
-        """Activate User Email Before Login is Allowed"""
-        user = self.get_object()
-        user.is_active = True
-        user.save()
-        serializer = self.serializer_class(instance=user)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    @action(
-        detail=True,
-        methods=['post'],
-        url_name='deactivate',
-        url_path='deactivate',
-        queryset=CustomUser.objects.filter(is_staff=False, is_superuser=False),
-        serializer_class=None,
-        permission_classes=[permissions.IsAuthenticated]
-    )
-    def deactivate_user(self, request: Request, *args: List[Any], **kwargs: Dict[Any, Any]) -> Response:
-        """Activate User Email Before Login is Allowed"""
-        user = self.get_object()
-        user.is_active = False
-        user.save()
-        return Response(data={'status': 'success'}, status=status.HTTP_200_OK)
+    permission_classes = (permissions.AllowAny, )
 
 
 class UserViewset(mixins.RetrieveModelMixin,
@@ -104,6 +74,7 @@ class LogoutView(views.APIView):
 
 
 class ResetPasswordViewset(viewsets.ViewSet):
+    permission_classes = (permissions.AllowAny, )
 
     @swagger_auto_schema(
         operation_id='gettoken',
@@ -129,8 +100,7 @@ class ResetPasswordViewset(viewsets.ViewSet):
         user.reset_token = token
         user.save()
         send_reset_password_otp_to_user_email_task.delay(
-            user.email, raw_token)  # pragma no-cover
-        # TODO: stop sending the otp as part of the response
+            user.email, raw_token)
         return Response(data={'token': raw_token}, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
@@ -214,16 +184,24 @@ class ListFollowersView(generics.ListAPIView):
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
 
-class RetrieveFollowerView(generics.RetrieveAPIView):
+class RetrieveFollowerView(generics.GenericAPIView):
     """Retrieve and block followers."""
     serializer_class = UserFollowerSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsUserOrReadOnly]
     lookup_field = 'id'
 
     def get_queryset(self):
         return UserFollowing.objects.filter(user__is_active=True, followed_user__is_active=True)
 
-    def get(self, request, id, follower_id, *args, **kwargs):
+    def get_object(self):
+        user = None
+        try:
+            user = CustomUser.objects.get(id=self.kwargs.get('id'))
+        except CustomUser.DoesNotExist:
+            pass
+        return user
+
+    def get(self, request: Request, id: int, follower_id: int) -> Response:
         """Retrieve single follower."""
         try:
             follower_contract = UserFollowing.objects.get(
@@ -234,24 +212,12 @@ class RetrieveFollowerView(generics.RetrieveAPIView):
         serializer = self.serializer_class(instance=follower_contract)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
-
-class BlockFollowerView(generics.GenericAPIView):
-    serializer_class = UserFollowerSerializer
-    permission_classes = [permissions.IsAuthenticated, IsUserOrReadOnly]
-    lookup_field = 'id'
-
-    def get_object(self):
-        user = None
-        try:
-            user = CustomUser.objects.get(id=self.kwargs.get('id'))
-        except CustomUser.DoesNotExist:
-            pass
-        return user
-
-    def get_queryset(self):
-        return UserFollowing.objects.filter(user__is_active=True, followed_user__is_active=True)
-
-    def post(self, request, id, follower_id):
+    @action(
+        detail=True,
+        methods=['POST'],
+        url_name='toggle-block-follower'
+    )
+    def post(self, request: Request, id: int, follower_id: int) -> Response:
         """Block/unblock Follower."""
 
         try:
