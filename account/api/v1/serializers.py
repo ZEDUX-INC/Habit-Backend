@@ -95,7 +95,30 @@ class LogoutSerializer(serializers.Serializer):
         return attrs
 
 
-class UserFollowerSerializer(serializers.ModelSerializer):
+class FollowerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserFollowing
+        fields = ['date_created', 'blocked', 'user']
+        read_only_fields = ['date_created', 'user']
+
+    def validate(self, attrs: Dict[str, Any]) -> Dict[str, Any]:
+        user = self.context.get('user')
+
+        if not user:
+            raise DatabaseError(
+                f'Authenticatetd User must be added to {self.__class__.__name__} context.')  # pragma: no cover
+
+        return attrs
+
+    def to_representation(self, instance):
+        return {
+            'user': UserSerializer(instance=instance.user).data,
+            'following_since': instance.date_created,
+            'blocked': instance.blocked
+        }
+
+
+class FollowingSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserFollowing
         fields = ['date_created', 'followed_user', 'blocked']

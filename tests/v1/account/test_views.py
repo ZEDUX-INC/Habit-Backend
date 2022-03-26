@@ -3,7 +3,7 @@ from django.test import TestCase
 from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework.status import *
-from account.api.v1.serializers import UserFollowerSerializer
+from account.api.v1.serializers import FollowingSerializer, FollowerSerializer
 from account.models import UserFollowing
 from tests.v1.account.test_models import UserFactory
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -156,7 +156,7 @@ class TestRetrieveFollowerView(TestCase):
                       kwargs={'id': self.user.id, 'follower_id': self.followed_user.id})
         response = self.client.get(url)
         self.assertEqual(response.status_code, HTTP_200_OK)
-        serializer = UserFollowerSerializer(instance=follower_transaction)
+        serializer = FollowerSerializer(instance=follower_transaction)
         self.assertDictEqual(response.data, serializer.data)
 
     def test_retrieve_follower_not_found(self):
@@ -192,7 +192,7 @@ class TestBlockFollowerView(TestCase):
             data), content_type='application/json')
         self.assertEqual(response.status_code, HTTP_200_OK)
         follower_transaction.refresh_from_db()
-        serializer = UserFollowerSerializer(instance=follower_transaction)
+        serializer = FollowerSerializer(instance=follower_transaction)
         self.assertDictEqual(response.data, serializer.data)
 
     def test_block_follower_not_found(self):
@@ -203,7 +203,7 @@ class TestBlockFollowerView(TestCase):
             data), content_type='application/json')
         self.assertEqual(response.status_code, HTTP_404_NOT_FOUND)
         self.assertDictEqual(
-            response.data, {'detail': 'You are not presently following this user.'})
+            response.data, {'detail': 'Follower with this id not found.'})
 
     def test_block_follower_not_permitted(self):
         url = reverse('api-account-v1:follower-details',
@@ -252,7 +252,7 @@ class TestListCreateFollowingView(TestCase):
         self.assertEqual(response.status_code, HTTP_201_CREATED)
         follower_transaction = UserFollowing.objects.get(
             followed_user=response.data['user'].get('id'))
-        serializer = UserFollowerSerializer(instance=follower_transaction)
+        serializer = FollowingSerializer(instance=follower_transaction)
         self.assertDictEqual(response.data, serializer.data)
 
     def test_follow_user_faliure(self):
@@ -296,7 +296,7 @@ class TestRetrieveRemoveFollowingView(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, HTTP_200_OK)
         follower_transaction.refresh_from_db()
-        serializer = UserFollowerSerializer(instance=follower_transaction)
+        serializer = FollowingSerializer(instance=follower_transaction)
         self.assertDictEqual(response.data, serializer.data)
 
     def test_retrieve_followed_user_not_found(self):

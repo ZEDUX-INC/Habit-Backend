@@ -8,7 +8,8 @@ from tests.utils.TestCase import SerializerTestCase
 
 from account.api.v1.serializers import (
     RPEmailSerializer,
-    UserFollowerSerializer,
+    FollowingSerializer,
+    FollowerSerializer,
     UserSerializer,
     RPTokenSerializer,
     RPPasswordSerializer
@@ -100,13 +101,13 @@ class TestRPPasswordSerializer(SerializerTestCase):
 
 
 @pytest.mark.django_db
-class TestUserFollowerSerializer(SerializerTestCase):
+class TestFollowingSerializer(SerializerTestCase):
     pytestmark = pytest.mark.django_db
 
     def setUp(self) -> None:
         self.user = UserFactory().create()
         self.follower_user = UserFactory().create(email='user2@gmail.com')
-        self.serializer = UserFollowerSerializer
+        self.serializer = FollowingSerializer
 
         self.INVALID_DATA = [
             {
@@ -147,4 +148,32 @@ class TestUserFollowerSerializer(SerializerTestCase):
         }
 
         self.assertDictEqual(data, serializer.data)
+        follower_transaction.delete()
+
+
+@pytest.mark.django_db
+class TestFollowerSerializer(SerializerTestCase):
+    pytestmark = pytest.mark.django_db
+
+    def setUp(self) -> None:
+        self.user = UserFactory().create()
+        self.follower_user = UserFactory().create(email='user2@gmail.com')
+        self.serializer = FollowerSerializer
+        return super().setUp()
+
+    def test_to_representation(self) -> None:
+        follower_transaction = UserFollowing.objects.create(
+            user=self.follower_user, followed_user=self.user
+        )
+        serializer = self.serializer(
+            instance=follower_transaction, context={'user': self.user})
+
+        data = {
+            'user': UserSerializer(instance=follower_transaction.user).data,
+            'following_since': follower_transaction.date_created,
+            'blocked': follower_transaction.blocked
+        }
+
+        self.assertDictEqual(data, serializer.to_representation(
+            instance=follower_transaction))
         follower_transaction.delete()

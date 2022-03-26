@@ -1,5 +1,5 @@
 from datetime import timedelta
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 from django.core import signing
 
@@ -24,7 +24,8 @@ from account.api.v1.serializers import (
     UserSerializer,
     RPEmailSerializer,
     LogoutSerializer,
-    UserFollowerSerializer,
+    FollowerSerializer,
+    FollowingSerializer,
 )
 from account.api.v1.tasks import send_reset_password_otp_to_user_email_task
 
@@ -169,13 +170,16 @@ class ResetPasswordViewset(viewsets.ViewSet):
 
 
 class ListFollowersView(generics.ListAPIView):
-    serializer_class = UserFollowerSerializer
+    serializer_class = FollowerSerializer
     lookup_field = 'id'
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         return UserFollowing.objects.filter(user__is_active=True, followed_user__is_active=True)
 
+    @swagger_auto_schema(
+        operation_id='follower-list',
+    )
     def get(self, request, id, *args, **kwargs):
         """Retrieve list of followers"""
         user = get_object_or_404(CustomUser, id=id)
@@ -186,7 +190,8 @@ class ListFollowersView(generics.ListAPIView):
 
 class RetrieveFollowerView(generics.GenericAPIView):
     """Retrieve and block followers."""
-    serializer_class = UserFollowerSerializer
+
+    serializer_class = FollowerSerializer
     permission_classes = [permissions.IsAuthenticated, IsUserOrReadOnly]
     lookup_field = 'id'
 
@@ -201,32 +206,34 @@ class RetrieveFollowerView(generics.GenericAPIView):
             pass
         return user
 
-    def get(self, request: Request, id: int, follower_id: int) -> Response:
-        """Retrieve single follower."""
+    def get_follower_contract(self, user_id: int, follower_id: int) -> Union[UserFollowing, None]:
         try:
             follower_contract = UserFollowing.objects.get(
-                user__id=follower_id, followed_user__id=id)
+                user__id=follower_id, followed_user__id=user_id)
         except UserFollowing.DoesNotExist:
             raise exceptions.NotFound('Follower with this id not found.')
 
+        return follower_contract
+
+    @swagger_auto_schema(
+        operation_id='follower-detail',
+    )
+    def get(self, request: Request, id: int, follower_id: int) -> Response:
+        """Retrieve single follower."""
+        follower_contract = self.get_follower_contract(
+            user_id=id, follower_id=follower_id)
         serializer = self.serializer_class(instance=follower_contract)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
-    @action(
-        detail=True,
-        methods=['POST'],
-        url_name='toggle-block-follower'
+    @swagger_auto_schema(
+        operation_id='toggle-block-follower',
+        request_body=FollowerSerializer,
     )
     def post(self, request: Request, id: int, follower_id: int) -> Response:
         """Block/unblock Follower."""
 
-        try:
-            follower_contract = UserFollowing.objects.get(
-                user__id=follower_id, followed_user__id=request.user.id)
-        except UserFollowing.DoesNotExist:
-            raise exceptions.NotFound(
-                'You are not presently following this user.')
-
+        follower_contract = self.get_follower_contract(
+            user_id=id, follower_id=follower_id)
         follower_contract.blocked = True if request.data.get(
             'blocked') else False
         follower_contract.save(update_fields=['blocked'])
@@ -241,7 +248,8 @@ class RetrieveFollowerView(generics.GenericAPIView):
 
 class ListCreateFollowingView(generics.GenericAPIView):
     """List and follow new users."""
-    serializer_class = UserFollowerSerializer
+
+    serializer_class = FollowingSerializer
     lookup_field = 'id'
     permission_classes = [permissions.IsAuthenticated, IsUserOrReadOnly]
 
@@ -256,6 +264,9 @@ class ListCreateFollowingView(generics.GenericAPIView):
             pass
         return user
 
+    @swagger_auto_schema(
+        operation_id='list-followed-users',
+    )
     def get(self, request, id, *args, **kwargs):
         """Retreive list of followed users"""
         user = get_object_or_404(CustomUser, id=id)
@@ -263,6 +274,10 @@ class ListCreateFollowingView(generics.GenericAPIView):
         serializer = self.serializer_class(instance=queryset, many=True)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
+    @swagger_auto_schema(
+        operation_id='add-user-to-following-list',
+        request_body=FollowingSerializer,
+    )
     def post(self, request, id, *args, **kwargs):
         """Follow new user"""
         serializer = self.serializer_class(data=request.data, context={
@@ -273,7 +288,7 @@ class ListCreateFollowingView(generics.GenericAPIView):
 
 
 class RetrieveRemoveFollowingView(generics.GenericAPIView):
-    serializer_class = UserFollowerSerializer
+    serializer_class = FollowingSerializer
     permission_classes = [permissions.IsAuthenticated, IsUserOrReadOnly]
     lookup_field = 'id'
 
@@ -288,6 +303,9 @@ class RetrieveRemoveFollowingView(generics.GenericAPIView):
             pass
         return user
 
+    @swagger_auto_schema(
+        operation_id='followed-user-detail',
+    )
     def get(self, request, id, followed_id, *args, **kwargs):
         """Retreive followed user"""
         try:
@@ -299,6 +317,10 @@ class RetrieveRemoveFollowingView(generics.GenericAPIView):
         serializer = self.serializer_class(instance=follower_contract)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
+    @swagger_auto_schema(
+        operation_id='remove-user-from-following-list',
+        request_body=FollowingSerializer,
+    )
     def delete(self, request, id, followed_id, *args, **kwargs):
         """Unfollow a user."""
 
