@@ -34,9 +34,9 @@ class TestAuthViews(TestCase):
             reverse('api-account-v1:auth-views-list'), data, content_type='application/json')
         self.assertEqual(response.status_code, HTTP_201_CREATED)
 
-        # assert that the user created is inactive
+        # assert that the user created is active
         user = UserFactory.model.objects.get(id=response.data['id'])
-        self.assertEqual(user.is_active, False)
+        self.assertEqual(user.is_active, True)
 
     def test_logout(self):
         """Test user logout."""
@@ -51,37 +51,6 @@ class TestAuthViews(TestCase):
         response = client.post(
             reverse('api-account-v1:logout-user'), data, content_type='application/json')
         self.assertEqual(response.status_code, HTTP_200_OK)
-
-    def test_deactivate(self):
-        """Test deactivating a user."""
-
-        user = UserFactory().create(is_active=True)
-        token = RefreshToken.for_user(user)
-
-        client = APIClient()
-        client.credentials(HTTP_AUTHORIZATION='Token ' +
-                           str(token.access_token))
-
-        response = client.post(
-            reverse('api-account-v1:auth-views-deactivate',
-                    kwargs={'pk': user.id}),
-            None,
-            content_type='application/json',
-        )
-        self.assertEqual(response.status_code, HTTP_200_OK)
-
-        user.refresh_from_db()
-        self.assertEqual(user.is_active, False)
-
-    def test_activate_email(self):
-        """Test activate user email endpoint."""
-        user = UserFactory().create(is_active=False)
-        response = self.client.get(reverse(
-            'api-account-v1:auth-views-activate', kwargs={'pk': user.id}), None, content_type='application/json')
-        self.assertEqual(response.status_code, HTTP_200_OK)
-
-        user.refresh_from_db()
-        self.assertEqual(user.is_active, True)
 
 
 @pytest.mark.django_db
@@ -216,7 +185,7 @@ class TestBlockFollowerView(TestCase):
         """Test Retrieve Follower 201"""
         follower_transaction = UserFollowing.objects.create(
             followed_user=self.user, user=self.follower_user)
-        url = reverse('api-account-v1:toggle-block-follower',
+        url = reverse('api-account-v1:follower-details',
                       kwargs={'id': self.user.id, 'follower_id': self.follower_user.id})
         data = {'blocked': True}
         response = self.client.post(url, data=json.dumps(
@@ -227,7 +196,7 @@ class TestBlockFollowerView(TestCase):
         self.assertDictEqual(response.data, serializer.data)
 
     def test_block_follower_not_found(self):
-        url = reverse('api-account-v1:toggle-block-follower',
+        url = reverse('api-account-v1:follower-details',
                       kwargs={'id': self.user.id, 'follower_id': self.follower_user.id})
         data = {'blocked': True}
         response = self.client.post(url, data=json.dumps(
@@ -237,7 +206,7 @@ class TestBlockFollowerView(TestCase):
             response.data, {'detail': 'You are not presently following this user.'})
 
     def test_block_follower_not_permitted(self):
-        url = reverse('api-account-v1:toggle-block-follower',
+        url = reverse('api-account-v1:follower-details',
                       kwargs={'id': self.follower_user.id, 'follower_id': self.user.id})
         data = {'blocked': True}
         response = self.client.post(url, data=json.dumps(
