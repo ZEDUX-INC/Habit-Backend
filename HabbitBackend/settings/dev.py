@@ -55,10 +55,10 @@ INSTALLED_APPS = [
     'django_celery_beat',
     'django_celery_results',
     'django_filters',
-    # 'django_storages',
 
     # custome apps
     'account.apps.AccountConfig',
+    'thread.apps.ThreadConfig',
 ]
 
 MIDDLEWARE = [
