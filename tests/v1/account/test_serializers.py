@@ -1,4 +1,3 @@
-import email
 import pytest
 
 from rest_framework.status import *

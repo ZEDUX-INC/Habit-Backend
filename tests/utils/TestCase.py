@@ -46,6 +46,6 @@ class SerializerTestCase(TestCase):
         """
         i = 0
         for entry in entries:
-            serial = serializer(data=entry.get('data'), **kwargs)
+            serial = serializer(data=entry['data'], **kwargs)
             self.assertFalse(serial.is_valid(), msg=entry.get('label'))
             self.assertDictEqual(serial.errors, entry['errors'])
