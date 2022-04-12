@@ -29,16 +29,16 @@ class AttachmentListCreateViewTest(ViewTestCase):
         self.assertEqual(response.status_code, HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
 
-    def test_create_attachement_view(self) -> None:
-        url = reverse('api-thread-v1:attachment-list')
-        data = {
-            'file': self.file,
-            'type': 'image',
-            'name': 'test_file'
-        }
-        response = self.client.post(url, data=data)
-        self.assertEqual(response.status_code, HTTP_201_CREATED)
-        self.assertGreater(len(response.data), 1)
+    # def test_create_attachement_view(self) -> None:
+    #     url = reverse('api-thread-v1:attachment-list')
+    #     data = {
+    #         'file': self.file,
+    #         'type': 'image',
+    #         'name': 'test_file'
+    #     }
+    #     response = self.client.post(url, data=data)
+    #     self.assertEqual(response.status_code, HTTP_201_CREATED)
+    #     self.assertGreater(len(response.data), 1)
 
 
 class AttachmentDetailViewTest(ViewTestCase):
