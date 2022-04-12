@@ -23,7 +23,8 @@ class AttachmentSerializer(serializers.ModelSerializer):
 
 
 class MessageSerializer(serializers.ModelSerializer):
-    attachments = AttachmentSerializer(many=True)
+    attachments = serializers.PrimaryKeyRelatedField(
+        queryset=Attachment.objects.all(), many=True)
 
     class Meta:
         model = Message
@@ -32,11 +33,12 @@ class MessageSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data: Dict[str, Any]) -> Attachment:
         user = self.context.get('request').user
-
+        attachments = validated_data.pop('attachments', [])
         obj = Message.objects.create(
             **validated_data,
-            created_by=user
+            created_by=user,
         )
+        obj.attachments.set(attachments)
 
         return obj
 
@@ -79,10 +81,10 @@ class ThreadSerializer(serializers.ModelSerializer):
         message = None
 
         if msg_data:
-            message = Message.objects.create(
-                **msg_data,
-                created_by=user
-            )
+            msg_serializer = MessageSerializer(
+                data=msg_data, context=self.context)
+            msg_serializer.is_valid(True)
+            message = msg_serializer.save()
 
         with transaction.atomic():
             obj = Thread.objects.create(

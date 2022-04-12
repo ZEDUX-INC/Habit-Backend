@@ -14,6 +14,7 @@ class UserFactory:
     email = 'user@example.com'
     username = 'johndoe'
     password = '111'
+    is_active = True
     pytestmark = pytest.mark.django_db
 
     def create(self, **kwargs) -> CustomUser:

@@ -17,8 +17,8 @@ class TestAuthViews(TestCase):
     user = None
     client = APIClient()
 
-    def setup(self):
-        self.user = UserFactory().create(is_active=True)
+    def setUp(self):
+        self.user = UserFactory().create()
 
     def test_signup(self):
         """Test user signup endpoint."""
@@ -41,8 +41,7 @@ class TestAuthViews(TestCase):
     def test_logout(self):
         """Test user logout."""
 
-        user = UserFactory().create(is_active=True)
-        token = RefreshToken.for_user(user)
+        token = RefreshToken.for_user(self.user)
 
         client = APIClient()
         client.credentials(HTTP_AUTHORIZATION='Token ' +
@@ -61,7 +60,7 @@ class TestResetPasswordViewset(TestCase):
 
     def test_generate_token(self):
         """Test generate reset password token view."""
-        user = UserFactory().create(is_active=True)
+        user = UserFactory().create()
         data = {'email': user.email}
 
         with mock.patch('account.api.v1.tasks.send_reset_password_otp_to_user_email_task.delay') as email_task:
@@ -75,7 +74,7 @@ class TestResetPasswordViewset(TestCase):
 
     def test_validate_token(self):
         """Test Validate reset password token view."""
-        user = UserFactory().create(is_active=True)
+        user = UserFactory().create()
         raw_token, token = user.generate_resettoken()
         user.reset_token = token
         user.save()
@@ -83,12 +82,11 @@ class TestResetPasswordViewset(TestCase):
 
         response = self.client.post(reverse(
             'api-account-v1:reset-password-validatetoken'), data, content_type='application/json')
-        print(data)
         self.assertEqual(response.status_code, HTTP_200_OK)
 
     def test_resetpassword(self):
         """Test reset user password with token."""
-        user = UserFactory().create(is_active=True)
+        user = UserFactory().create()
         raw_token, token = user.generate_resettoken()
         user.reset_token = token
         user.save()
@@ -118,7 +116,7 @@ class TestListFollowersView(TestCase):
 
     def test_list_followers_success(self):
         """Test followers found 200."""
-        follower_transaction = UserFollowing.objects.create(
+        UserFollowing.objects.create(
             user=self.followed_user, followed_user=self.user)
         url = reverse('api-account-v1:followers-list',
                       kwargs={'id': self.user.id})
