@@ -1,6 +1,9 @@
-from typing import Any, Sequence
+from typing import Sequence
 from django.test import TestCase
 from rest_framework import serializers
+from rest_framework.test import APIClient
+from rest_framework_simplejwt.tokens import RefreshToken
+from tests.v1.account.test_models import UserFactory
 
 
 class SerializerTestCase(TestCase):
@@ -49,3 +52,13 @@ class SerializerTestCase(TestCase):
             serial = serializer(data=entry['data'], **kwargs)
             self.assertFalse(serial.is_valid(), msg=entry.get('label'))
             self.assertDictEqual(serial.errors, entry['errors'])
+
+
+class ViewTestCase(TestCase):
+
+    def setUp(self) -> None:
+        self.user = UserFactory().create()
+        self.client = APIClient()
+        token = RefreshToken.for_user(self.user)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' +
+                                str(token.access_token))

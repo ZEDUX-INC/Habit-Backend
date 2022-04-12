@@ -1,14 +1,61 @@
+import pytest
+from django.db import transaction
 from django.db.utils import IntegrityError
 from django.test import TestCase
-from thread.models import Thread, Message
-from account.models import CustomUser
-from django.db import transaction
+from thread.models import Thread, Message, Attachment
+from tests.v1.account.test_models import UserFactory
+
+
+@pytest.mark.django_db
+class AttachementFactory:
+    pytestmark = pytest.mark.django_db
+    file = None
+    type = ''
+    name = 'test_file'
+    model = Attachment
+    created_by = None
+
+    @pytest.mark.django_db
+    def create(self, **kwargs) -> Attachment:
+        options = {
+            'created_by': self.created_by,
+            'file': self.file,
+            'type': self.type,
+            'name': self.name,
+        }
+
+        options.update(**kwargs)
+        return self.model.objects.create(**options)
+
+
+@pytest.mark.django_db
+class ThreadFactory:
+    pytestmark = pytest.mark.django_db
+    type = '0'
+    reply_setting = '0'
+    replying = None
+    sharing = None
+    model = Thread
+    created_by = None
+
+    @pytest.mark.django_db
+    def create(self, **kwargs) -> Thread:
+        options = {
+            'created_by': self.created_by,
+            'type': self.type,
+            'reply_setting': self.reply_setting,
+            'replying': self.replying,
+            'sharing': self.sharing
+        }
+
+        options.update(**kwargs)
+        return self.model.objects.create(**options)
 
 
 class TestThreadModel(TestCase):
 
     def setUp(self) -> None:
-        self.user = CustomUser.objects.create(
+        self.user = UserFactory().create(
             email='user@example.com',
             password='12345678'
         )

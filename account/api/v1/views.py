@@ -306,7 +306,7 @@ class RetrieveRemoveFollowingView(generics.GenericAPIView):
     @swagger_auto_schema(
         operation_id='followed-user-detail',
     )
-    def get(self, request, id, followed_id, *args, **kwargs):
+    def get(self, request: Request, id: str, followed_id: str, *args, **kwargs):
         """Retreive followed user"""
         try:
             follower_contract = UserFollowing.objects.get(
@@ -321,7 +321,7 @@ class RetrieveRemoveFollowingView(generics.GenericAPIView):
         operation_id='remove-user-from-following-list',
         request_body=FollowingSerializer,
     )
-    def delete(self, request, id, followed_id, *args, **kwargs):
+    def delete(self, request: Request, id: str, followed_id: str, *args, **kwargs):
         """Unfollow a user."""
 
         try:
