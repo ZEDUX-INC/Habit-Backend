@@ -27,7 +27,8 @@ class AttachmentListCreateViewTest(ViewTestCase):
         url = reverse('api-thread-v1:attachment-list')
         response = self.client.get(url)
         self.assertEqual(response.status_code, HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
+        results = response.data['results']
+        self.assertEqual(len(results), 1)
 
     # def test_create_attachement_view(self) -> None:
     #     url = reverse('api-thread-v1:attachment-list')
@@ -86,7 +87,8 @@ class ThreadListCreateViewTest(ViewTestCase):
         url = reverse('api-thread-v1:thread-list')
         response = self.client.get(url)
         self.assertEqual(response.status_code, HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
+        results = response.data['results']
+        self.assertEqual(len(results), 1)
 
     def test_create_thread_view(self) -> None:
         url = reverse('api-thread-v1:thread-list')
@@ -138,4 +140,5 @@ class UserThreadListView(ViewTestCase):
 
         response = self.client.get(url)
         self.assertEqual(response.status_code, HTTP_200_OK)
-        self.assertEqual(len(response.data), 3)
+        results = response.data['results']
+        self.assertEqual(len(results), 3)

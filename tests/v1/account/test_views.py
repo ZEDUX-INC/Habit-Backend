@@ -122,7 +122,8 @@ class TestListFollowersView(TestCase):
                       kwargs={'id': self.user.id})
         response = self.client.get(url)
         self.assertEqual(response.status_code, HTTP_200_OK)
-        self.assertGreater(len(response.data), 0)
+        results = response.data['results']
+        self.assertGreater(len(results), 0)
 
     def test_list_followers_user_empty(self):
         """Test followers found not found."""
@@ -130,7 +131,8 @@ class TestListFollowersView(TestCase):
                       kwargs={'id': self.user.id})
         response = self.client.get(url)
         self.assertEqual(response.status_code, HTTP_200_OK)
-        self.assertEqual(len(response.data), 0)
+        results = response.data['results']
+        self.assertEqual(len(results), 0)
 
 
 @pytest.mark.django_db
@@ -232,7 +234,8 @@ class TestListCreateFollowingView(TestCase):
                       kwargs={'id': self.user.id})
         response = self.client.get(url)
         self.assertEqual(response.status_code, HTTP_200_OK)
-        self.assertGreater(len(response.data), 0)
+        results = response.data['results']
+        self.assertGreater(len(results), 0)
 
     def test_list_followed_users_not_found(self):
         UserFollowing.objects.create(

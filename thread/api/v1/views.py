@@ -1,11 +1,7 @@
-from rest_framework.decorators import action
 from rest_framework import generics
-from rest_framework.generics import get_object_or_404
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework import exceptions
-from rest_framework.request import Request
 from rest_framework import permissions
+from rest_framework.filters import SearchFilter, OrderingFilter
+from django_filters.rest_framework import DjangoFilterBackend
 
 from thread.models import Attachment, Thread
 from thread.api.v1.permissions import IsCreatorOrReadOnly
@@ -22,6 +18,11 @@ class AttachmentListView(generics.ListCreateAPIView):
     permission_classes = (permissions.IsAuthenticated,)
     queryset = Attachment.objects.all()
     lookup_field = 'id'
+    filter_backends = [OrderingFilter, SearchFilter, DjangoFilterBackend]
+    filterset_fields = ['type']
+    search_fields = ['name']
+    ordering_fields = ['date_created']
+    ordering = ordering_fields
 
 
 class AttachmentDetailView(generics.RetrieveDestroyAPIView):
@@ -36,6 +37,11 @@ class ThreadListView(generics.ListCreateAPIView):
     permission_classes = (permissions.IsAuthenticated,)
     queryset = Thread.objects.all()
     lookup_field = 'id'
+    filter_backends = [OrderingFilter, SearchFilter, DjangoFilterBackend]
+    filterset_fields = ['type']
+    search_fields = ['message__content']
+    ordering_fields = ['date_created']
+    ordering = ordering_fields
 
 
 class ThreadDetailView(generics.RetrieveDestroyAPIView):
@@ -49,6 +55,11 @@ class UserThreadListView(generics.ListAPIView):
     serializer_class = ThreadSerializer
     permission_classes = (permissions.IsAuthenticated,)
     lookup_field = 'id'
+    filter_backends = [OrderingFilter, SearchFilter, DjangoFilterBackend]
+    filterset_fields = ['type']
+    search_fields = ['message__content']
+    ordering_fields = ['date_created']
+    ordering = ordering_fields
 
     def get_queryset(self):
         user = self.request.user

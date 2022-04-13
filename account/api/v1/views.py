@@ -11,7 +11,8 @@ from rest_framework import status
 from rest_framework import exceptions
 from rest_framework.request import Request
 from rest_framework import permissions
-
+from rest_framework.filters import SearchFilter, OrderingFilter
+from django_filters.rest_framework import DjangoFilterBackend
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
@@ -46,6 +47,11 @@ class UserViewset(mixins.RetrieveModelMixin,
         is_staff=False, is_superuser=False, is_active=True)
     serializer_class = UserSerializer
     permission_classes = (permissions.IsAuthenticated,)
+    filter_backends = [OrderingFilter, SearchFilter, DjangoFilterBackend]
+    filterset_fields = ['date_of_birth']
+    search_fields = ['username', 'email', 'date_of_birth']
+    ordering_fields = ['date_joined']
+    ordering = ordering_fields
 
 
 class LogoutView(views.APIView):
@@ -173,6 +179,11 @@ class ListFollowersView(generics.ListAPIView):
     serializer_class = FollowerSerializer
     lookup_field = 'id'
     permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [OrderingFilter, SearchFilter, DjangoFilterBackend]
+    filterset_fields = ['blocked']
+    search_fields = []
+    ordering_fields = ['date_created']
+    ordering = ordering_fields
 
     def get_queryset(self):
         return UserFollowing.objects.filter(user__is_active=True, followed_user__is_active=True)
@@ -181,10 +192,18 @@ class ListFollowersView(generics.ListAPIView):
         operation_id='follower-list',
     )
     def get(self, request, id, *args, **kwargs):
-        """Retrieve list of followers"""
+        """Retrieve list of followers."""
         user = get_object_or_404(CustomUser, id=id)
-        queryset = self.get_queryset().filter(followed_user=user)
-        serializer = self.serializer_class(instance=queryset, many=True)
+        queryset = self.filter_queryset(
+            self.get_queryset()).filter(followed_user=user)
+
+        page = self.paginate_queryset(queryset)
+
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
 
@@ -246,12 +265,17 @@ class RetrieveFollowerView(generics.GenericAPIView):
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
 
-class ListCreateFollowingView(generics.GenericAPIView):
+class ListCreateFollowingView(generics.ListCreateAPIView):
     """List and follow new users."""
 
     serializer_class = FollowingSerializer
     lookup_field = 'id'
     permission_classes = [permissions.IsAuthenticated, IsUserOrReadOnly]
+    filter_backends = [OrderingFilter, SearchFilter, DjangoFilterBackend]
+    filterset_fields = ['blocked']
+    search_fields = []
+    ordering_fields = ['date_created']
+    ordering = ordering_fields
 
     def get_queryset(self):
         return UserFollowing.objects.filter(user__is_active=True, followed_user__is_active=True)
@@ -270,8 +294,15 @@ class ListCreateFollowingView(generics.GenericAPIView):
     def get(self, request, id, *args, **kwargs):
         """Retreive list of followed users"""
         user = get_object_or_404(CustomUser, id=id)
-        queryset = self.get_queryset().filter(user=user)
-        serializer = self.serializer_class(instance=queryset, many=True)
+        queryset = self.filter_queryset(self.get_queryset()).filter(user=user)
+
+        page = self.paginate_queryset(queryset)
+
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(

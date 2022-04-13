@@ -18,7 +18,7 @@ class UserSerializer(serializers.ModelSerializer):
             'id', 'username', 'first_name',
             'last_name', 'email', 'password',
             'cover', 'location', 'bio',
-            'dob', 'profile_picture', 'date_joined',
+            'date_of_birth', 'profile_picture', 'date_joined',
             'last_login',
         ]
 

@@ -69,7 +69,8 @@ class CustomUser(AbstractUser):
         null=True,
         blank=True
     )
-    dob = models.DateField(verbose_name='Date of Birth', null=True, blank=True)
+    date_of_birth = models.DateField(
+        verbose_name='Date of Birth', null=True, blank=True)
     bio = models.TextField(default='', null=True, blank=True)
     profile_picture = models.FileField(
         upload_to='media/profile/', null=True, blank=True)
