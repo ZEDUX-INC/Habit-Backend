@@ -1,9 +1,7 @@
 from django.core.exceptions import ValidationError
 from django.core.files.base import File
 from typing import Union
-
-
-BYTE_PER_MB = 1048576
+from thread.constants import BYTE_PER_MB
 
 
 def file_size_validator(file: File) -> Union[File, None]:

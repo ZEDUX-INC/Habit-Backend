@@ -1,7 +1,7 @@
 from typing import Dict, Any
 from django.forms import ValidationError
 from rest_framework import serializers
-from thread.models import Attachment, Message, Thread
+from thread.models import Attachment, Message, Thread, Like
 from django.db import transaction
 
 
@@ -94,3 +94,35 @@ class ThreadSerializer(serializers.ModelSerializer):
             )
 
             return obj
+
+    def to_representation(self, instance: Thread) -> Dict[str, Any]:
+        data = super().to_representation(instance)
+        likes = instance.likes.count()
+        data.update({'likes': likes})
+        return data
+
+
+class LikeSerializer(serializers.ModelSerializer):
+    thread = serializers.PrimaryKeyRelatedField(queryset=Thread.objects.all())
+
+    class Meta:
+        model = Like
+        fields = '__all__'
+        read_only_fields = ['created_by', 'date_created']
+
+    def create(self, validated_data: Dict[str, Any]) -> Like:
+        user = self.context.get('request').user
+
+        instance = Like.objects.create(
+            **validated_data,
+            created_by=user
+        )
+
+        return instance
+
+    def to_representation(self, instance: Like) -> Dict[str, Any]:
+        data = super().to_representation(instance)
+        thread = instance.thread
+        thread_data = ThreadSerializer(instance=thread).data
+        data.update({'thread': thread_data})
+        return data
