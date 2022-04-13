@@ -2,7 +2,7 @@ import pytest
 from django.db import transaction
 from django.db.utils import IntegrityError
 from django.test import TestCase
-from thread.models import Thread, Message, Attachment
+from thread.models import Thread, Message, Attachment, Like
 from tests.v1.account.test_models import UserFactory
 
 
@@ -46,6 +46,24 @@ class ThreadFactory:
             'reply_setting': self.reply_setting,
             'replying': self.replying,
             'sharing': self.sharing
+        }
+
+        options.update(**kwargs)
+        return self.model.objects.create(**options)
+
+
+@pytest.mark.django_db
+class LikeFactory:
+    pytestmark = pytest.mark.django_db
+    thread = None
+    model = Like
+    created_by = None
+
+    @pytest.mark.django_db
+    def create(self, **kwargs) -> Thread:
+        options = {
+            'created_by': self.created_by,
+            'thread': self.thread
         }
 
         options.update(**kwargs)

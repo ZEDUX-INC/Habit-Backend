@@ -1,7 +1,4 @@
-from pyexpat import model
-from tabnanny import check
 from django.db import models
-from django.utils import timezone
 from account.models import CustomUser
 from thread.validators import file_size_validator, file_type_validator
 from thread import constants as thread_constants
@@ -88,3 +85,13 @@ class Thread(models.Model):
 
     def __str__(self) -> str:
         return f'thread {self.id} created by {self.created_by.email}'
+
+
+class Like(models.Model):
+    created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    thread = models.ForeignKey(
+        Thread, on_delete=models.CASCADE, related_name='likes')
+    date_created = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return f'user {self.created_by.email} liked thread {self.thread.id}'

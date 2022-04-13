@@ -1,4 +1,3 @@
-from re import A
 
 
 MUSIC_THREAD = 0
@@ -18,3 +17,5 @@ THREAD_REPLY_SETTINGS = (
     (ALLOW_REPLY_FROM_FOLLOWERS, 'Allow only followers to reply'),
     (ALLOW_REPLY_FROM_MENTIONED, 'Allow only mentiond users to reply')
 )
+
+BYTE_PER_MB = 1048576
