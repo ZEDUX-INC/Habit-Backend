@@ -1,7 +1,10 @@
+from typing import Dict, Any
 from django.db import models
 from account.models import CustomUser
 from thread.validators import file_size_validator, file_type_validator
 from thread import constants as thread_constants
+from django.db.utils import IntegrityError
+
 # Create your models here.
 
 
@@ -95,3 +98,8 @@ class Like(models.Model):
 
     def __str__(self) -> str:
         return f'user {self.created_by.email} liked thread {self.thread.id}'
+
+    def save(self, **kwargs: Dict[Any, Any]) -> None:
+        if self.created_by == self.thread.created_by:
+            raise IntegrityError('created_by == thread__created_by')
+        return super().save(**kwargs)

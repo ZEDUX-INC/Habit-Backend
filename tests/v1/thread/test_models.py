@@ -52,24 +52,6 @@ class ThreadFactory:
         return self.model.objects.create(**options)
 
 
-@pytest.mark.django_db
-class LikeFactory:
-    pytestmark = pytest.mark.django_db
-    thread = None
-    model = Like
-    created_by = None
-
-    @pytest.mark.django_db
-    def create(self, **kwargs) -> Thread:
-        options = {
-            'created_by': self.created_by,
-            'thread': self.thread
-        }
-
-        options.update(**kwargs)
-        return self.model.objects.create(**options)
-
-
 class TestThreadModel(TestCase):
 
     def setUp(self) -> None:
@@ -124,3 +106,56 @@ class TestThreadModel(TestCase):
                 raised_exception = True
 
             self.assertIsNone(raised_exception)
+
+
+@pytest.mark.django_db
+class LikeFactory:
+    pytestmark = pytest.mark.django_db
+    thread = None
+    model = Like
+    created_by = None
+
+    @pytest.mark.django_db
+    def create(self, **kwargs) -> Thread:
+        options = {
+            'created_by': self.created_by,
+            'thread': self.thread
+        }
+
+        options.update(**kwargs)
+        return self.model.objects.create(**options)
+
+
+class TestLikeModel(TestCase):
+
+    def setUp(self) -> None:
+        self.user_1 = UserFactory().create(email='user@example.com')
+        self.user_2 = UserFactory().create(email='nano@example.com')
+        self.thread_1 = Thread.objects.create(created_by=self.user_1)
+        self.thread_2 = Thread.objects.create(created_by=self.user_2)
+
+    def test_contraints(self) -> None:
+
+        raised_exception = False
+        with transaction.atomic():
+            try:
+                LikeFactory().create(
+                    created_by=self.user_1,
+                    thread=self.thread_1
+                )
+            except IntegrityError as error:
+                raised_exception = True
+
+        self.assertTrue(raised_exception)
+
+        raised_exception = False
+        with transaction.atomic():
+            try:
+                LikeFactory().create(
+                    created_by=self.user_1,
+                    thread=self.thread_2
+                )
+            except IntegrityError as error:
+                raised_exception = True
+
+        self.assertFalse(raised_exception)
