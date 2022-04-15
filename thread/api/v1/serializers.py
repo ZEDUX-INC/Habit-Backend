@@ -1,4 +1,5 @@
 from typing import Dict, Any
+from attr import attr
 from django.forms import ValidationError
 from rest_framework import serializers
 from thread.models import Attachment, Message, Thread, Like
@@ -109,6 +110,20 @@ class LikeSerializer(serializers.ModelSerializer):
         model = Like
         fields = '__all__'
         read_only_fields = ['created_by', 'date_created']
+
+    def validate(self, attrs) -> Dict[str, Any]:
+        attrs = super().validate(attrs)
+        user = self.context.get('request').user
+        thread = attrs['thread']
+
+        if user == thread.created_by:
+            raise ValidationError({
+                'non_field_errors': [
+                    'You cant like your own thread.'
+                ]
+            })
+
+        return attrs
 
     def create(self, validated_data: Dict[str, Any]) -> Like:
         user = self.context.get('request').user

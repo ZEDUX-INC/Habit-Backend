@@ -4,6 +4,7 @@ from account.models import CustomUser
 from thread.models import Thread
 from rest_framework.request import Request
 from django.http import HttpRequest
+from tests.v1.account.test_models import UserFactory
 
 
 class TestThreadSerializer(SerializerTestCase):
@@ -86,19 +87,30 @@ class TestLikeSerializer(SerializerTestCase):
 
     def setUp(self) -> None:
         self.serializer = LikeSerializer
-
-        self.user = CustomUser.objects.create(
-            email='user@example.com',
-            password='12345678'
-        )
+        self.user = UserFactory().create(email='user@example.com')
 
         http_request = HttpRequest()
         self.request = Request(http_request)
         self.request.user = self.user
 
-        self.thread = Thread.objects.create(
-            created_by=self.user,
-        )
+        user_2 = UserFactory().create(email='jagaja@example.com')
+
+        self.thread = Thread.objects.create(created_by=user_2)
+        thread_2 = Thread.objects.create(created_by=self.user)
+
+        self.INVALID_DATA = [
+            {
+                'data': {
+                    'thread': thread_2.id,
+                },
+                'errors': {
+                    'non_field_errors': [
+                        'You cant like your own thread.'
+                    ]
+                },
+                'label': 'You cant like your own thread.'
+            }
+        ]
 
         self.VALID_DATA = [
             {
@@ -109,6 +121,10 @@ class TestLikeSerializer(SerializerTestCase):
     def test_valid_data(self) -> None:
         self.check_valid_data(
             self.serializer, entries=self.VALID_DATA, context={'request': self.request})
+
+    def test_invalid_data(self) -> None:
+        self.check_invalid_data(
+            self.serializer, entries=self.INVALID_DATA, context={'request': self.request})
 
     def test_to_representation(self) -> None:
         serializer = self.serializer(
