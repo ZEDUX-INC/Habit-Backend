@@ -1,4 +1,5 @@
 from tests.utils.TestCase import SerializerTestCase
+from tests.v1.thread.test_models import LikeFactory
 from thread.api.v1.serializers import LikeSerializer, ThreadSerializer
 from account.models import CustomUser
 from thread.models import Thread
@@ -97,6 +98,8 @@ class TestLikeSerializer(SerializerTestCase):
 
         self.thread = Thread.objects.create(created_by=user_2)
         thread_2 = Thread.objects.create(created_by=self.user)
+        liked_thread = Thread.objects.create(created_by=user_2)
+        LikeFactory().create(created_by=self.user, thread=liked_thread)
 
         self.INVALID_DATA = [
             {
@@ -105,10 +108,21 @@ class TestLikeSerializer(SerializerTestCase):
                 },
                 'errors': {
                     'non_field_errors': [
-                        'You cant like your own thread.'
+                        'User can not like their own threads.'
                     ]
                 },
-                'label': 'You cant like your own thread.'
+                'label': 'User can not like their own threads.'
+            },
+            {
+                'data': {
+                    'thread': liked_thread.id,
+                },
+                'errors': {
+                    'non_field_errors': [
+                        'User has already liked this thread.'
+                    ]
+                },
+                'label': 'User has already liked this thread.'
             }
         ]
 

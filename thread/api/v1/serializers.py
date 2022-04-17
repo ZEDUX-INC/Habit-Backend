@@ -119,7 +119,14 @@ class LikeSerializer(serializers.ModelSerializer):
         if user == thread.created_by:
             raise ValidationError({
                 'non_field_errors': [
-                    'You cant like your own thread.'
+                    'User can not like their own threads.'
+                ]
+            })
+
+        if Like.objects.filter(thread=thread, created_by=user):
+            raise ValidationError({
+                'non_field_errors': [
+                    'User has already liked this thread.'
                 ]
             })
 

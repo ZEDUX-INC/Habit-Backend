@@ -5,8 +5,6 @@ from thread.validators import file_size_validator, file_type_validator
 from thread import constants as thread_constants
 from django.db.utils import IntegrityError
 
-# Create your models here.
-
 
 class Attachment(models.Model):
     created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
