@@ -31,8 +31,14 @@ class UserSerializer(serializers.ModelSerializer):
             user.save()
         return user
 
+    def generate_username(self, user: CustomUser) -> None:
+
+        if not user.username:
+            user.username = f'{str(user.email).split("@")[0]}-{user.id}'
+
     def create(self, validated_data: Dict[str, Any]) -> CustomUser:
         user = super().create(validated_data)
+        self.generate_username(user)
         self.change_password(user, validated_data.get('password', None))
         user.is_active = True
         user.save()

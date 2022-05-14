@@ -3,9 +3,9 @@ from rest_framework import permissions
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
 
-from thread.models import Attachment, Like, PlayList
+from thread.models import Attachment, Like, PlayList, PlayListCategory
 from thread.api.v1.permissions import IsCreatorOrReadOnly
-from thread.api.v1.serializers import AttachmentSerializer, LikeSerializer, PlayListSerializer
+from thread.api.v1.serializers import AttachmentSerializer, LikeSerializer, PlayListCategorySerializer, PlayListSerializer
 from django.db.models import Q
 
 
@@ -96,3 +96,15 @@ class UserPlaylistView(generics.ListAPIView):
 
     def get_queryset(self):
         return PlayList.objects.filter(created_by=self.request.user)
+
+
+class PlayListCategoryListView(generics.ListAPIView):
+    serializer_class = PlayListCategorySerializer
+    queryset = PlayListCategory.objects.all()
+    permission_classes = (permissions.IsAuthenticated,)
+    lookup_field = 'id'
+    filter_backends = [OrderingFilter, SearchFilter, DjangoFilterBackend]
+    filterset_fields = ['date_created']
+    search_fields = ['title']
+    ordering_fields = ['date_created']
+    ordering = ordering_fields

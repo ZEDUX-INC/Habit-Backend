@@ -9,6 +9,7 @@ from thread.api.v1.views import (
     PlaylistListView,
     PlayListDetailView,
     UserPlaylistView,
+    PlayListCategoryListView,
 )
 
 app_name = 'api-thread-v1'
@@ -26,4 +27,7 @@ urlpatterns = [
     path('playlist/', PlaylistListView.as_view(), name='playlist-list'),
     path('playlist/me/', UserPlaylistView.as_view(), name='user-playlist'),
     path('playlist/<str:id>/', PlayListDetailView.as_view(), name='playlist-detail'),
+
+    path('playlist-categories/', PlayListCategoryListView.as_view(),
+         name='playlist-category-list'),
 ]

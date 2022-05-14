@@ -3,7 +3,7 @@ from django.urls import reverse
 from rest_framework.status import *
 from account.models import UserFollowing
 from tests.v1.account.test_models import UserFactory
-from tests.v1.thread.test_models import AttachementFactory, LikeFactory, PlayListFactory
+from tests.v1.thread.test_models import AttachementFactory, LikeFactory, PlayListCategoryFactory, PlayListFactory
 from tests.utils.TestCase import ViewTestCase
 
 
@@ -214,6 +214,18 @@ class UserPlayListListViewTest(ViewTestCase):
         PlayListFactory.create(created_by=user_2)
         PlayListFactory.create(created_by=self.user)
         url = reverse('api-thread-v1:user-playlist')
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, HTTP_200_OK)
+        results = response.data['results']
+        self.assertEqual(len(results), 1)
+
+
+class UserPlayListListViewTest(ViewTestCase):
+
+    def test_view(self):
+        PlayListCategoryFactory.create()
+        url = reverse('api-thread-v1:playlist-category-list')
 
         response = self.client.get(url)
         self.assertEqual(response.status_code, HTTP_200_OK)
