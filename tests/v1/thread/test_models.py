@@ -1,161 +1,137 @@
-import pytest
-from django.db import transaction
-from django.db.utils import IntegrityError
-from django.test import TestCase
-from thread.models import Thread, Message, Attachment, Like
+from thread.models import Attachment, Like, PlayList, PlayListCategory, Comment
 from tests.v1.account.test_models import UserFactory
+from factory.django import DjangoModelFactory
+from django.test import TestCase
+from django.db import IntegrityError, transaction
 
 
-@pytest.mark.django_db
-class AttachementFactory:
-    pytestmark = pytest.mark.django_db
+class AttachementFactory(DjangoModelFactory):
     file = None
     type = ''
     name = 'test_file'
-    model = Attachment
-    created_by = None
 
-    @pytest.mark.django_db
-    def create(self, **kwargs) -> Attachment:
-        options = {
-            'created_by': self.created_by,
-            'file': self.file,
-            'type': self.type,
-            'name': self.name,
-        }
-
-        options.update(**kwargs)
-        return self.model.objects.create(**options)
+    class Meta:
+        model = Attachment
 
 
-@pytest.mark.django_db
-class ThreadFactory:
-    pytestmark = pytest.mark.django_db
-    type = '0'
-    reply_setting = '0'
+class TestAttachmentModel(TestCase):
+    def test_unicode(self) -> None:
+        user = UserFactory().create()
+        obj = AttachementFactory.create(created_by=user)
+        self.assertEqual(
+            str(obj), f'Attachement {obj.id}-{obj.name} added by {user.email}')
+
+
+class PlayListCategoryFactory(DjangoModelFactory):
+    title = 'Pop'
+
+    class Meta:
+        model = PlayListCategory
+        django_get_or_create = ('title',)
+
+
+class TestPlayListCategoryModel(TestCase):
+    def test_unicode(self) -> None:
+        obj = PlayListCategoryFactory.create()
+        self.assertEqual(str(obj), f'PlayListCategory - {obj.title}')
+
+
+class CommentFactory(DjangoModelFactory):
+    content = 'This is a comment by some dork'
     replying = None
-    sharing = None
-    model = Thread
-    created_by = None
 
-    @pytest.mark.django_db
-    def create(self, **kwargs) -> Thread:
-        options = {
-            'created_by': self.created_by,
-            'type': self.type,
-            'reply_setting': self.reply_setting,
-            'replying': self.replying,
-            'sharing': self.sharing
-        }
-
-        options.update(**kwargs)
-        return self.model.objects.create(**options)
+    class Meta:
+        model = Comment
 
 
-class TestThreadModel(TestCase):
+class PlayListFactory(DjangoModelFactory):
+    title = 'Sabaton'
+    cover_image = None
+    short_description = 'This playlist is a Jem'
 
-    def setUp(self) -> None:
-        self.user = UserFactory().create(
-            email='user@example.com',
-            password='12345678'
-        )
-
-        self.message = Message.objects.create(
-            created_by=self.user
-        )
-
-        self.thread = Thread.objects.create(
-            created_by=self.user,
-        )
-
-    def test_reply_share_constraint(self) -> None:
-
-        with transaction.atomic() as db_transaction:
-            raised_exception = None
-            try:
-                Thread.objects.create(
-                    replying=self.thread,
-                    sharing=self.thread,
-                    message=self.message
-                )
-            except IntegrityError as error:
-                raised_exception = True
-
-            self.assertIsNotNone(raised_exception)
-
-        with transaction.atomic() as db_transaction:
-            raised_exception = None
-
-            try:
-                Thread.objects.create(
-                    created_by=self.user,
-                    replying=self.thread,
-                    message=self.message
-                )
-            except IntegrityError as error:
-                raised_exception = True
-
-            self.assertIsNone(raised_exception)
-
-            try:
-                Thread.objects.create(
-                    created_by=self.user,
-                    sharing=self.thread,
-                )
-            except IntegrityError as error:
-                raised_exception = True
-
-            self.assertIsNone(raised_exception)
+    class Meta:
+        model = PlayList
 
 
-@pytest.mark.django_db
-class LikeFactory:
-    pytestmark = pytest.mark.django_db
-    thread = None
-    model = Like
-    created_by = None
-
-    @pytest.mark.django_db
-    def create(self, **kwargs) -> Thread:
-        options = {
-            'created_by': self.created_by,
-            'thread': self.thread
-        }
-
-        options.update(**kwargs)
-        return self.model.objects.create(**options)
-
-
-class TestLikeModel(TestCase):
-
-    def setUp(self) -> None:
-        self.user_1 = UserFactory().create(email='user@example.com')
-        self.user_2 = UserFactory().create(email='nano@example.com')
-        self.thread_1 = Thread.objects.create(created_by=self.user_1)
-        self.thread_2 = Thread.objects.create(created_by=self.user_2)
-
-    def test_contraints(self) -> None:
-
-        raised_exception = False
+class TestPlayListModel(TestCase):
+    def test_constraints(self) -> None:
         with transaction.atomic():
+            raised_exception = None
+            user = UserFactory().create()
+            playlist = PlayListFactory.create(created_by=user)
+
             try:
-                LikeFactory().create(
-                    created_by=self.user_1,
-                    thread=self.thread_1
-                )
-            except IntegrityError as error:
+                PlayList.objects.create(title=playlist.title, created_by=user)
+            except IntegrityError as err:
                 raised_exception = True
 
         self.assertTrue(raised_exception)
 
-        raised_exception = False
-        with transaction.atomic():
-            try:
-                LikeFactory().create(
-                    created_by=self.user_1,
-                    thread=self.thread_2
-                )
-            except IntegrityError as error:
-                raised_exception = True
 
-        self.assertFalse(raised_exception)
+class LikeFactory(DjangoModelFactory):
+    class Meta:
+        model = Like
+
+
+class TestLikeModel(TestCase):
+    def setUp(self) -> None:
+        self.user = UserFactory().create()
+        self.other_user = UserFactory().create(email='TestLikeModel@example.com')
+        self.playlist = PlayListFactory.create(created_by=self.other_user)
+        self.comment = CommentFactory.create(
+            created_by=self.other_user, playlist=self.playlist)
+
+    def test_constraints(self) -> None:
+
+        # test that a like must have either comment or playlist fields
+        with transaction.atomic():
+            raised_exception = None
+            try:
+                LikeFactory.create(created_by=self.user)
+            except IntegrityError as err:
+                raised_exception = True
+            self.assertTrue(raised_exception)
+
+        with transaction.atomic():
+            raised_exception = None
+
+            try:
+                LikeFactory.create(created_by=self.user,
+                                   playlist=self.playlist, comment=self.comment)
+            except IntegrityError as err:
+                raised_exception = True
+            self.assertTrue(raised_exception)
+
+        with transaction.atomic():
+            raised_exception = None
+
+            try:
+                LikeFactory.create(created_by=self.user,
+                                   playlist=self.playlist)
+                LikeFactory.create(created_by=self.user, comment=self.comment)
+            except IntegrityError as err:
+                raised_exception = True
+            self.assertIsNone(raised_exception)
+
+        # test that a user can't like thier own playlist
+        with transaction.atomic():
+            raised_exception = None
+            playlist = PlayListFactory.create(created_by=self.user)
+
+            try:
+                LikeFactory.create(created_by=self.user, playlist=playlist)
+            except IntegrityError as err:
+                raised_exception = True
+            self.assertTrue(raised_exception)
+
+        # test that a user can't like thier own comment
+        with transaction.atomic():
+            raised_exception = None
+            comment = CommentFactory.create(
+                created_by=self.user, playlist=self.playlist)
+
+            try:
+                LikeFactory.create(created_by=self.user, comment=comment)
+            except IntegrityError as err:
+                raised_exception = True
+            self.assertTrue(raised_exception)

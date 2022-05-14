@@ -1,4 +1,4 @@
-from typing import Sequence
+from typing import Mapping, Sequence, Any
 from django.test import TestCase
 from rest_framework import serializers
 from rest_framework.test import APIClient
@@ -9,7 +9,7 @@ from tests.v1.account.test_models import UserFactory
 class SerializerTestCase(TestCase):
     """Custom Test Case for Serializers."""
 
-    def check_required_fields(self, serializer: serializers.Serializer, fields: Sequence[str]):
+    def check_required_fields(self, serializer: serializers.Serializer, fields: Sequence[str]) -> None:
         """
             Check if a list of fields is required in a form.
 
@@ -20,7 +20,7 @@ class SerializerTestCase(TestCase):
             if field_instance.required:
                 self.assertIn(field_name, fields)
 
-    def check_non_required_fields(self, serializer: serializers.Serializer, fields: Sequence[str]):
+    def check_non_required_fields(self, serializer: serializers.Serializer, fields: Sequence[str]) -> None:
         """
             Check if a list of fields is not required in a form.
 
@@ -31,7 +31,7 @@ class SerializerTestCase(TestCase):
             if not field_instance.required:
                 self.assertIn(field_name, fields)
 
-    def check_valid_data(self, serializer: serializers.Serializer, entries: Sequence[dict], **kwargs) -> None:
+    def check_valid_data(self, serializer: serializers.Serializer, entries: Sequence[Mapping[str, Any]], **kwargs: dict[str, Any]) -> None:
         """
             Test data entries for validity in a form
             :param  entries: data entries to be checked
@@ -41,7 +41,7 @@ class SerializerTestCase(TestCase):
             serial = serializer(data=data, **kwargs)
             self.assertTrue(serial.is_valid(True))
 
-    def check_invalid_data(self, serializer: serializers.Serializer, entries: Sequence[dict], **kwargs) -> None:
+    def check_invalid_data(self, serializer: serializers.Serializer, entries: Sequence[Mapping[str, Any]], **kwargs: dict[str, Any]) -> None:
         """
             Test data entries for invalidity in a form
             :param entries: data entries to be checked
