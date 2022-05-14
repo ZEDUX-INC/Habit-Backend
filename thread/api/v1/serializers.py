@@ -72,14 +72,10 @@ class LikeSerializer(serializers.ModelSerializer):
 class PlayListCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = PlayListCategory
-        fields = ['title']
+        fields = ['id', 'title']
 
 
 class PlayListSerializer(serializers.ModelSerializer):
-    categories = PlayListCategorySerializer(
-        many=True, context={'queryset': PlayListCategory.objects.all()})
-    songs = AttachmentSerializer(
-        many=True, context={'queryset': Attachment.objects.all()})
 
     class Meta:
         model = PlayList
@@ -110,6 +106,15 @@ class PlayListSerializer(serializers.ModelSerializer):
         )
 
         instance.categories.set(categories)
-        instance.categories.set(songs)
+        instance.songs.set(songs)
+        instance.save()
 
         return instance
+
+    def to_representation(self, instance: PlayList) -> dict[str, Any]:
+        data = super().to_representation(instance)
+        data.update({
+            'categories': PlayListCategorySerializer(instance=instance.categories, many=True).data,
+            'songs': AttachmentSerializer(instance=instance.songs, many=True).data
+        })
+        return data

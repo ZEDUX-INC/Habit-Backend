@@ -1,5 +1,5 @@
 from tests.utils.TestCase import SerializerTestCase
-from tests.v1.thread.test_models import LikeFactory, PlayListFactory
+from tests.v1.thread.test_models import AttachementFactory, LikeFactory, PlayListFactory
 from thread.api.v1.serializers import LikeSerializer, PlayListSerializer
 from rest_framework.request import Request
 from django.http import HttpRequest
@@ -94,12 +94,29 @@ class PlayListSerializerTests(SerializerTestCase):
         self.request.user = self.user
 
         self.playlist = PlayListFactory.create(created_by=self.user)
+        song = AttachementFactory.create(created_by=self.user)
+
         self.INVALID_DATA = [
+            {
+                'data': {
+                    'title': 'Nagni is home',
+                    'categories': [],
+                    'songs': [],
+                    'active_hours': 24,
+                    'short_description': 'Holla',
+                },
+                'errors': {
+                    'songs': [
+                        'This list may not be empty.'
+                    ]
+                },
+                'label': 'Song Field is required.'
+            },
             {
                 'data': {
                     'title': self.playlist.title,
                     'categories': [],
-                    'songs': [],
+                    'songs': [song.id],
                     'active_hours': 24,
                     'short_description': 'Holla',
                 },
@@ -116,7 +133,7 @@ class PlayListSerializerTests(SerializerTestCase):
             {
                 'title': 'My Major jams',
                 'categories': [],
-                'songs': [],
+                'songs': [song.id],
                 'active_hours': 24,
                 'short_description': 'Holla',
             },

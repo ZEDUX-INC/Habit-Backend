@@ -1,0 +1,58 @@
+[
+  {
+    "model": "thread.playlistcategory",
+    "pk": 1,
+    "fields": {
+      "title": "POP",
+      "date_created": "2022-05-14"
+    }
+  },
+  {
+    "model": "thread.playlistcategory",
+    "pk": 2,
+    "fields": {
+      "title": "AFROBEAT",
+      "date_created": "2022-05-14"
+    }
+  },
+  {
+    "model": "thread.playlistcategory",
+    "pk": 3,
+    "fields": {
+      "title": "RAP",
+      "date_created": "2022-05-14"
+    }
+  },
+  {
+    "model": "thread.playlistcategory",
+    "pk": 4,
+    "fields": {
+      "title": "GOSPEL",
+      "date_created": "2022-05-14"
+    }
+  },
+  {
+    "model": "thread.playlistcategory",
+    "pk": 5,
+    "fields": {
+      "title": "BLUES",
+      "date_created": "2022-05-14"
+    }
+  },
+  {
+    "model": "thread.playlistcategory",
+    "pk": 6,
+    "fields": {
+      "title": "R&B",
+      "date_created": "2022-05-14"
+    }
+  },
+  {
+    "model": "thread.playlistcategory",
+    "pk": 7,
+    "fields": {
+      "title": "OTHERS",
+      "date_created": "2022-05-14"
+    }
+  }
+]

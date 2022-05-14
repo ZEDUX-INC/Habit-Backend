@@ -157,6 +157,7 @@ class PlayListListViewTest(ViewTestCase):
         super().setUp()
         self.user_2 = UserFactory().create(email='ragna@gmail.com')
         self.playlist = PlayListFactory.create(created_by=self.user)
+        self.song = AttachementFactory.create(created_by=self.user)
         self.url = reverse('api-thread-v1:playlist-list')
 
     def test_list_playlist_view(self) -> None:
@@ -165,18 +166,18 @@ class PlayListListViewTest(ViewTestCase):
         results = response.data['results']
         self.assertEqual(len(results), 1)
 
-    # def test_create_playlist_view(self) -> None:
-    #     data = {
-    #         'title': 'My Major jams',
-    #         'songs': [],
-    #         'categories': [],
-    #         'active_hours': 24,
-    #         'short_description': 'Holla',
-    #     }
+    def test_create_playlist_view(self) -> None:
+        data = {
+            'title': 'My Major jams',
+            'songs': [self.song.id],
+            'categories': [],
+            'active_hours': 24,
+            'short_description': 'Holla',
+        }
 
-    #     response = self.client.post(self.url, data=data)
-    #     self.assertEqual(response.status_code, HTTP_201_CREATED)
-    #     self.assertGreater(len(response.data), 1)
+        response = self.client.post(self.url, data=data)
+        self.assertEqual(response.status_code, HTTP_201_CREATED)
+        self.assertGreater(len(response.data), 1)
 
 
 class PlayListDetailViewTest(ViewTestCase):
