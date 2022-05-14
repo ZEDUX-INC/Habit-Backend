@@ -3,9 +3,9 @@ from rest_framework import permissions
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
 
-from thread.models import Attachment, Like, Thread
+from thread.models import Attachment, Like, PlayList
 from thread.api.v1.permissions import IsCreatorOrReadOnly
-from thread.api.v1.serializers import AttachmentSerializer, ThreadSerializer, LikeSerializer
+from thread.api.v1.serializers import AttachmentSerializer, LikeSerializer, PlayListSerializer
 from django.db.models import Q
 
 
@@ -32,43 +32,6 @@ class AttachmentDetailView(generics.RetrieveDestroyAPIView):
     lookup_field = 'id'
 
 
-class ThreadListView(generics.ListCreateAPIView):
-    serializer_class = ThreadSerializer
-    permission_classes = (permissions.IsAuthenticated,)
-    queryset = Thread.objects.all()
-    lookup_field = 'id'
-    filter_backends = [OrderingFilter, SearchFilter, DjangoFilterBackend]
-    filterset_fields = ['type']
-    search_fields = ['message__content']
-    ordering_fields = ['date_created']
-    ordering = ordering_fields
-
-
-class ThreadDetailView(generics.RetrieveDestroyAPIView):
-    serializer_class = ThreadSerializer
-    permission_classes = (permissions.IsAuthenticated, IsCreatorOrReadOnly)
-    queryset = Thread.objects.all()
-    lookup_field = 'id'
-
-
-class UserThreadListView(generics.ListAPIView):
-    serializer_class = ThreadSerializer
-    permission_classes = (permissions.IsAuthenticated,)
-    lookup_field = 'id'
-    filter_backends = [OrderingFilter, SearchFilter, DjangoFilterBackend]
-    filterset_fields = ['type']
-    search_fields = ['message__content']
-    ordering_fields = ['date_created']
-    ordering = ordering_fields
-
-    def get_queryset(self):
-        user = self.request.user
-        return Thread.objects.filter(
-            Q(created_by=user)
-            | Q(created_by__following__user=user)
-            | Q(created_by__follower__followed_user=user))
-
-
 class LikeListView(generics.ListCreateAPIView):
     serializer_class = LikeSerializer
     queryset = Like.objects.all()
@@ -92,9 +55,7 @@ class UserLikeListView(generics.ListAPIView):
     ordering = ordering_fields
 
     def get_queryset(self):
-        return Like.objects.filter(
-            created_by=self.request.user
-        )
+        return Like.objects.filter(created_by=self.request.user)
 
 
 class LikeDetailView(generics.RetrieveDestroyAPIView):
@@ -102,3 +63,36 @@ class LikeDetailView(generics.RetrieveDestroyAPIView):
     queryset = Like.objects.all()
     permission_classes = (permissions.IsAuthenticated, IsCreatorOrReadOnly)
     lookup_field = 'id'
+
+
+class PlaylistListView(generics.ListCreateAPIView):
+    serializer_class = PlayListSerializer
+    queryset = PlayList.objects.all()
+    permission_classes = (permissions.IsAuthenticated,)
+    lookup_field = 'id'
+    filter_backends = [OrderingFilter, SearchFilter, DjangoFilterBackend]
+    filterset_fields = ['date_created', 'categories__title', 'views']
+    search_fields = ['title']
+    ordering_fields = ['date_created']
+    ordering = ordering_fields
+
+
+class PlayListDetailView(generics.RetrieveDestroyAPIView):
+    serializer_class = PlayListSerializer
+    queryset = PlayList.objects.all()
+    permission_classes = (permissions.IsAuthenticated, IsCreatorOrReadOnly)
+    lookup_field = 'id'
+
+
+class UserPlaylistView(generics.ListAPIView):
+    serializer_class = PlayListSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+    lookup_field = 'id'
+    filter_backends = [OrderingFilter, SearchFilter, DjangoFilterBackend]
+    filterset_fields = ['date_created', 'categories__title', 'views']
+    search_fields = ['title']
+    ordering_fields = ['date_created']
+    ordering = ordering_fields
+
+    def get_queryset(self):
+        return PlayList.objects.filter(created_by=self.request.user)

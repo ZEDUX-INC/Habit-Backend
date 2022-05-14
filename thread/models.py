@@ -1,11 +1,9 @@
-from typing import Dict, Any
 from django.db import models
+from django.db.models import Q
 from account.models import CustomUser
 from thread.validators import file_size_validator, file_type_validator
-from thread import constants as thread_constants
-from django.db.utils import IntegrityError
-
-# Create your models here.
+from django.db.utils import IntegrityError, DatabaseError
+from typing import Optional, Iterable
 
 
 class Attachment(models.Model):
@@ -22,84 +20,91 @@ class Attachment(models.Model):
     date_created = models.DateTimeField(auto_now=True)
 
     def __str__(self) -> str:
-        return f'attachement {self.id}-{self.name} added by {self.created_by.email}'
+        return f'Attachement {self.id}-{self.name} added by {self.created_by.email}'
 
 
-class Message(models.Model):
+class Like(models.Model):
     created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-    content = models.TextField(null=True, blank=True)
-    edited = models.BooleanField(default=False)
-    date_created = models.DateTimeField(auto_now=True)
-    date_edited = models.DateTimeField(null=True, blank=True)
-    attachments = models.ManyToManyField(Attachment, blank=True)
-
-    def __str__(self) -> str:
-        return f'message {self.id} sent by {self.created_by.email}'
-
-
-class Thread(models.Model):
-    created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-    message = models.OneToOneField(
-        Message, on_delete=models.CASCADE, null=True)
-    type = models.CharField(
-        max_length=250, choices=thread_constants.THREAD_TYPES, default=thread_constants.POST_THREAD)
-    reply_setting = models.CharField(
-        max_length=250, choices=thread_constants.THREAD_REPLY_SETTINGS, default=thread_constants.ALLOW_REPLY_FROM_ALL)
-    replying = models.ForeignKey(
-        'Thread', on_delete=models.CASCADE, null=True, related_name='replies')
-    sharing = models.ForeignKey(
-        'Thread', on_delete=models.CASCADE, null=True, related_name='shares')
+    playlist = models.ForeignKey(
+        'PlayList', on_delete=models.CASCADE, related_name='likes', null=True)
+    comment = models.ForeignKey(
+        'Comment', on_delete=models.CASCADE, related_name='likes', null=True)
     date_created = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ['-date_created']
         constraints = [
             models.CheckConstraint(
-                name='%(app_label)s_%(class)s_can\'t set sharing field and replying field at the same time',
-                check=(
-                    models.Q(
-                        replying__isnull=True,
-                        sharing__isnull=False
-                    ) | models.Q(
-                        replying__isnull=False,
-                        sharing__isnull=True
-                    ) | models.Q(
-                        replying__isnull=True,
-                        sharing__isnull=True
-                    )
-                )
-            ),
-            models.CheckConstraint(
-                name='%(app_label)s_%(class)s_message field can not be null in reply thread',
-                check=(
-                    models.Q(
-                        replying__isnull=False,
-                        message__isnull=False
-                    ) | models.Q(
-                        replying__isnull=True,
-                        message__isnull=False
-                    ) | models.Q(
-                        replying__isnull=True,
-                        message__isnull=True
-                    )
+                name='Like must have either comment or playlist',
+                check=Q(
+                    Q(playlist__isnull=False, comment__isnull=True) | Q(
+                        playlist__isnull=True, comment__isnull=False)
                 )
             )
         ]
 
     def __str__(self) -> str:
-        return f'thread {self.id} created by {self.created_by.email}'
-
-
-class Like(models.Model):
-    created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-    thread = models.ForeignKey(
-        Thread, on_delete=models.CASCADE, related_name='likes')
-    date_created = models.DateTimeField(auto_now=True)
-
-    def __str__(self) -> str:
         return f'user {self.created_by.email} liked thread {self.thread.id}'
 
-    def save(self, **kwargs: Dict[Any, Any]) -> None:
-        if self.created_by == self.thread.created_by:
-            raise IntegrityError('created_by == thread__created_by')
-        return super().save(**kwargs)
+    def save(
+            self,
+            force_insert: bool = False,
+            force_update: bool = False,
+            using: Optional[str] = None,
+            update_fields: Optional[Iterable[str]] = None) -> None:
+
+        if self.playlist:
+            if self.created_by == self.playlist.created_by:
+                raise IntegrityError(
+                    'created_by__id and playlist__created_by__id must be unique')
+        elif self.comment:
+            if self.created_by == self.comment.created_by:
+                raise IntegrityError(
+                    'created_by__id and comment__created_by__id must be unique')
+
+        return super().save(force_insert, force_update, using, update_fields)
+
+
+class Comment(models.Model):
+    created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    playlist = models.ForeignKey(
+        'PlayList', on_delete=models.CASCADE, related_name='comments')
+    replying = models.ForeignKey(
+        'Comment', on_delete=models.CASCADE, related_name='replies', null=True)
+    content = models.TextField(default='')
+    attachment = models.ManyToManyField(Attachment)
+    date_created = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-date_created']
+
+
+class PlayListCategory(models.Model):
+    title = models.CharField(max_length=120, default='',
+                             db_index=True, unique=True, editable=False)
+    date_created = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['title']
+
+    def __str__(self) -> str:
+        return f'PlayListCategory - {self.title}'
+
+
+class PlayList(models.Model):
+    created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    title = models.CharField(max_length=120, default='', db_index=True)
+    categories = models.ManyToManyField(PlayListCategory, blank=True)
+    cover_image = models.ImageField(null=True)
+    songs = models.ManyToManyField(Attachment)
+    date_created = models.DateTimeField(auto_now=True)
+    active_hours = models.IntegerField(default=24)
+    views = models.BigIntegerField(default=0)
+    short_description = models.TextField(default='')
+
+    class Meta:
+        ordering = ['-date_created']
+        constraints = [
+            models.UniqueConstraint(
+                fields=('title', 'created_by'), name='name must be unqiue')
+        ]

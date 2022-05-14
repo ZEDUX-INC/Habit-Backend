@@ -1,89 +1,12 @@
 from tests.utils.TestCase import SerializerTestCase
-from thread.api.v1.serializers import LikeSerializer, ThreadSerializer
-from account.models import CustomUser
-from thread.models import Thread
+from tests.v1.thread.test_models import LikeFactory, PlayListFactory
+from thread.api.v1.serializers import LikeSerializer, PlayListSerializer
 from rest_framework.request import Request
 from django.http import HttpRequest
 from tests.v1.account.test_models import UserFactory
 
 
-class TestThreadSerializer(SerializerTestCase):
-
-    def setUp(self) -> None:
-        self.serializer = ThreadSerializer
-
-        self.user = CustomUser.objects.create(
-            email='user@example.com',
-            password='12345678'
-        )
-
-        http_request = HttpRequest()
-        self.request = Request(http_request)
-        self.request.user = self.user
-
-        self.thread = Thread.objects.create(
-            created_by=self.user,
-        )
-
-        self.INVALID_DATA = [
-            {
-                'data': {
-                    'replying': self.thread.id,
-                    'sharing': self.thread.id,
-                },
-                'errors': {
-                    'non_field_errors': [
-                        'Thread can not be a reply and a share at the same time.'
-                    ]
-                },
-                'label': 'Thread Can Not Reply and Share at the same time'
-            },
-            {
-                'data': {
-                    'replying': self.thread.id,
-                },
-                'errors': {
-                    'non_field_errors': [
-                        'Thread reply must have a message.'
-                    ]
-                },
-                'label': 'Message Field in require in Thread Reply.'
-            },
-        ]
-
-        self.VALID_DATA = [
-            {
-                'message': {
-                    'content': 'This is a reply to a thread',
-                    'attachments': []
-                },
-                'replying': self.thread.id,
-            },
-            {
-                'message': {
-                    'content': 'This is a cc to a thread',
-                    'attachments': []
-                },
-                'sharing': self.thread.id,
-            },
-            {
-                'message': {
-                    'content': 'This is a thread',
-                    'attachments': []
-                },
-            }
-        ]
-
-    def test_valid_data(self) -> None:
-        self.check_valid_data(
-            self.serializer, entries=self.VALID_DATA, context={'request': self.request})
-
-    def test_invalid_data(self) -> None:
-        self.check_invalid_data(
-            self.serializer, entries=self.INVALID_DATA, context={'request': self.request})
-
-
-class TestLikeSerializer(SerializerTestCase):
+class LikeSerializerTest(SerializerTestCase):
 
     def setUp(self) -> None:
         self.serializer = LikeSerializer
@@ -95,26 +18,42 @@ class TestLikeSerializer(SerializerTestCase):
 
         user_2 = UserFactory().create(email='jagaja@example.com')
 
-        self.thread = Thread.objects.create(created_by=user_2)
-        thread_2 = Thread.objects.create(created_by=self.user)
+        self.playlist = PlayListFactory.create(
+            created_by=user_2, title='Valkrie')
+        playlist_2 = PlayListFactory.create(
+            created_by=self.user, title='Magnum')
+        liked_playlist = PlayListFactory.create(
+            created_by=user_2, title='Valdor')
+        LikeFactory.create(created_by=self.user, playlist=liked_playlist)
 
         self.INVALID_DATA = [
             {
                 'data': {
-                    'thread': thread_2.id,
+                    'playlist': playlist_2.id,
                 },
                 'errors': {
                     'non_field_errors': [
-                        'You cant like your own thread.'
+                        'User can not like their own playlist.'
                     ]
                 },
-                'label': 'You cant like your own thread.'
+                'label': 'User can not like their own playlist.'
+            },
+            {
+                'data': {
+                    'playlist': liked_playlist.id,
+                },
+                'errors': {
+                    'non_field_errors': [
+                        'User has already liked this playlist.'
+                    ]
+                },
+                'label': 'User has already liked this playlist.'
             }
         ]
 
         self.VALID_DATA = [
             {
-                'thread': self.thread.id
+                'playlist': self.playlist.id
             },
         ]
 
@@ -128,14 +67,65 @@ class TestLikeSerializer(SerializerTestCase):
 
     def test_to_representation(self) -> None:
         serializer = self.serializer(
-            data={'thread': self.thread.id}, context={'request': self.request})
+            data={'playlist': self.playlist.id}, context={'request': self.request})
+
         serializer.is_valid()
         like = serializer.save()
-        data = {
+
+        expected_data = {
             'id': like.id,
             'created_by': self.user.id,
             'date_created': serializer.data['date_created'],
-            'thread': ThreadSerializer(instance=self.thread).data
+            'playlist': PlayListSerializer(instance=self.playlist).data,
+            'comment': None
         }
 
-        self.assertDictEqual(data, serializer.data)
+        self.assertDictEqual(expected_data, serializer.data)
+
+
+class PlayListSerializerTests(SerializerTestCase):
+
+    def setUp(self) -> None:
+        self.serializer = PlayListSerializer
+        self.user = UserFactory().create(email='user@example.com')
+
+        http_request = HttpRequest()
+        self.request = Request(http_request)
+        self.request.user = self.user
+
+        self.playlist = PlayListFactory.create(created_by=self.user)
+        self.INVALID_DATA = [
+            {
+                'data': {
+                    'title': self.playlist.title,
+                    'categories': [],
+                    'songs': [],
+                    'active_hours': 24,
+                    'short_description': 'Holla',
+                },
+                'errors': {
+                    'title': [
+                        'PlayList with this title already exists.'
+                    ]
+                },
+                'label': 'Playlist Title already exists.'
+            },
+        ]
+
+        self.VALID_DATA = [
+            {
+                'title': 'My Major jams',
+                'categories': [],
+                'songs': [],
+                'active_hours': 24,
+                'short_description': 'Holla',
+            },
+        ]
+
+    def test_valid_data(self) -> None:
+        self.check_valid_data(
+            self.serializer, entries=self.VALID_DATA, context={'request': self.request})
+
+    def test_invalid_data(self) -> None:
+        self.check_invalid_data(
+            self.serializer, entries=self.INVALID_DATA, context={'request': self.request})
