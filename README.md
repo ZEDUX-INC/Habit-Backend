@@ -7,14 +7,14 @@ clone the repositor
 git clone git@github.com:ZEDUX-INC/Habit-Backend.git
 ```
 
-Install precommit
-```bash
-  pre-commit install
-```
-
 Install python virtual environment
 ```bash
   python3 -m venv ./venv
+```
+
+Install precommit
+```bash
+  pre-commit install
 ```
 
 install python requirement
