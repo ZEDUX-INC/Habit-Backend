@@ -12,16 +12,17 @@ Install python virtual environment
   python3 -m venv ./venv
 ```
 
-Install precommit
-```bash
-  pre-commit install
-```
-
 install python requirement
 ```bash
   source ./venv/bin/activate
   pip install -r ./requirements.txt
 ```
+
+Install precommit
+```bash
+  pre-commit install
+```
+
 Run Migrations
 ```bash
   python manage.py migrate
