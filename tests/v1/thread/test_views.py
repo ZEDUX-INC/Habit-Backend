@@ -3,7 +3,7 @@ from django.urls import reverse
 from rest_framework.status import *
 from account.models import UserFollowing
 from tests.v1.account.test_models import UserFactory
-from tests.v1.thread.test_models import AttachementFactory, LikeFactory, PlayListCategoryFactory, PlayListFactory
+from tests.v1.thread.test_models import AttachementFactory, CommentFactory, LikeFactory, PlayListCategoryFactory, PlayListFactory
 from tests.utils.TestCase import ViewTestCase
 
 
@@ -221,7 +221,7 @@ class UserPlayListListViewTest(ViewTestCase):
         self.assertEqual(len(results), 1)
 
 
-class UserPlayListListViewTest(ViewTestCase):
+class UserPlayListCategoryViewTest(ViewTestCase):
 
     def test_view(self):
         PlayListCategoryFactory.create()
@@ -231,3 +231,62 @@ class UserPlayListListViewTest(ViewTestCase):
         self.assertEqual(response.status_code, HTTP_200_OK)
         results = response.data['results']
         self.assertEqual(len(results), 1)
+
+
+class PlayListCommentListViewTest(ViewTestCase):
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.playlist = PlayListFactory.create(created_by=self.user)
+        self.comment = CommentFactory.create(
+            created_by=self.user, playlist=self.playlist)
+        self.url = reverse('api-thread-v1:playlist-comments',
+                           kwargs={'id': self.playlist.id})
+
+    def test_list_playlist_comments_view(self) -> None:
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, HTTP_200_OK)
+        results = response.data['results']
+        self.assertEqual(len(results), 1)
+
+
+class PlayListCommentDetailViewTest(ViewTestCase):
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.playlist = PlayListFactory.create(created_by=self.user)
+        self.comment = CommentFactory.create(
+            created_by=self.user, playlist=self.playlist)
+        self.url = reverse('api-thread-v1:playlist-comment-detail',
+                           kwargs={'id': self.playlist.id, 'comment_id': self.comment.id})
+
+    def test_retreive_playlist_comments_detail(self) -> None:
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, HTTP_200_OK)
+
+    def test_update_playlist_comments_detail(self) -> None:
+        data = {
+            'content': 'He who must not be named.',
+            'playlist': self.playlist.id
+        }
+        response = self.client.patch(self.url, data)
+        self.assertEqual(response.status_code, HTTP_200_OK)
+
+    def test_delete_playlist_comment(self):
+        response = self.client.delete(self.url)
+        self.assertEqual(response.status_code, HTTP_204_NO_CONTENT)
+
+    def test_permission_denied_on_put_delete(self):
+        user = UserFactory().create(email='user@example2.com')
+        comment = CommentFactory.create(
+            created_by=user, playlist=self.playlist)
+        url = reverse('api-thread-v1:playlist-comment-detail',
+                      kwargs={'id': self.playlist.id, 'comment_id': comment.id})
+
+        response = self.client.put(
+            url, data={'content': 'By the emperor', 'playlist': self.playlist.id})
+        print(response.json())
+        self.assertEqual(response.status_code, HTTP_403_FORBIDDEN)
+
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, HTTP_403_FORBIDDEN)

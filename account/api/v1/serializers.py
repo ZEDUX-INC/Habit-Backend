@@ -56,7 +56,7 @@ class UserSerializer(serializers.ModelSerializer):
         self.change_password(user, validated_data.get('password', None))
         return user
 
-    def to_representation(self, instance) -> Dict[str, Any]:
+    def to_representation(self, instance: CustomUser) -> Dict[str, Any]:
         data = {**super().to_representation(instance)}
 
         if self.token:
@@ -87,11 +87,11 @@ class RPPasswordSerializer(serializers.Serializer):
 class LogoutSerializer(serializers.Serializer):
     refresh_token = serializers.CharField()
 
-    def save(self):
+    def save(self) -> None:
         token = RefreshToken(self.validated_data['refresh_token'])
         token.blacklist()
 
-    def validate(self, attrs):
+    def validate(self, attrs: Dict[str, Any]) -> Dict[str, Any]:
         try:
             RefreshToken(attrs['refresh_token'])
         except TokenError:
@@ -116,7 +116,7 @@ class FollowerSerializer(serializers.ModelSerializer):
 
         return attrs
 
-    def to_representation(self, instance):
+    def to_representation(self, instance: UserFollowing) -> Dict[str, Any]:
         return {
             'user': UserSerializer(instance=instance.user).data,
             'following_since': instance.date_created,
@@ -130,7 +130,7 @@ class FollowingSerializer(serializers.ModelSerializer):
         fields = ['date_created', 'followed_user', 'blocked']
         read_only_fields = ['date_created']
 
-    def create(self, validated_data):
+    def create(self, validated_data: Dict[str, Any]) -> UserFollowing:
         user = self.context.get('user')
 
         if not user:
@@ -156,7 +156,7 @@ class FollowingSerializer(serializers.ModelSerializer):
 
         return attrs
 
-    def to_representation(self, instance):
+    def to_representation(self, instance: UserFollowing) -> Dict[str, Any]:
         return {
             'user': UserSerializer(instance=instance.followed_user).data,
             'following_since': instance.date_created,

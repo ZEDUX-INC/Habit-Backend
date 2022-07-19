@@ -53,6 +53,11 @@ class PlayListFactory(DjangoModelFactory):
         model = PlayList
 
 
+class LikeFactory(DjangoModelFactory):
+    class Meta:
+        model = Like
+
+
 class TestPlayListModel(TestCase):
     def test_constraints(self) -> None:
         with transaction.atomic():
@@ -66,11 +71,6 @@ class TestPlayListModel(TestCase):
                 raised_exception = True
 
         self.assertTrue(raised_exception)
-
-
-class LikeFactory(DjangoModelFactory):
-    class Meta:
-        model = Like
 
 
 class TestLikeModel(TestCase):
