@@ -2,7 +2,7 @@ from typing import Dict, Any
 from attr import attr
 from django.forms import ValidationError
 from rest_framework import serializers
-from thread.models import Attachment, Like, PlayList, PlayListCategory
+from thread.models import Attachment, Like, PlayList, PlayListCategory, Comment
 
 
 class AttachmentSerializer(serializers.ModelSerializer):
@@ -117,4 +117,51 @@ class PlayListSerializer(serializers.ModelSerializer):
             'categories': PlayListCategorySerializer(instance=instance.categories, many=True).data,
             'songs': AttachmentSerializer(instance=instance.songs, many=True).data
         })
+        return data
+
+
+class CommentSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Comment
+        fields = '__all__'
+        read_only_fields = ['created_by', 'date_created']
+
+    def validate(self, attrs: Dict[str, Any]) -> Dict[str, Any]:
+        attrs = super().validate(attrs)
+
+        playlist = attrs['playlist']
+        replying = attrs.get('replying', None)
+
+        # validate that a reply comment is replying a comment in the same playlist
+        if replying:
+            if replying.playlist != playlist:
+                raise serializers.ValidationError({
+                    'non_field_errors': [
+                        'can not reply a comment from another playlist.'
+                    ]
+                })
+
+        return attrs
+
+    def create(self, validated_data: Dict[str, Any]) -> Comment:
+        user = self.context.get('request').user
+        attachments = validated_data.pop('attachments', [])
+
+        instance = Comment.objects.create(
+            **validated_data,
+            created_by=user
+        )
+
+        instance.attachments.set(attachments)
+        instance.save()
+
+        return instance
+
+    def to_representation(self, instance: Comment) -> dict[str, Any]:
+        data = super().to_representation(instance)
+        data.update({
+            'replies': [reply.id for reply in instance.replies.all()]
+        })
+
         return data

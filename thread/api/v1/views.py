@@ -1,12 +1,13 @@
+from django.shortcuts import get_object_or_404
 from rest_framework import generics
 from rest_framework import permissions
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
 
-from thread.models import Attachment, Like, PlayList, PlayListCategory
+from thread.models import Attachment, Like, PlayList, PlayListCategory, Comment
 from thread.api.v1.permissions import IsCreatorOrReadOnly
-from thread.api.v1.serializers import AttachmentSerializer, LikeSerializer, PlayListCategorySerializer, PlayListSerializer
-from django.db.models import Q
+from thread.api.v1.serializers import AttachmentSerializer, CommentSerializer, LikeSerializer, PlayListCategorySerializer, PlayListSerializer
+from django.db.models import QuerySet
 
 
 class AttachmentListView(generics.ListCreateAPIView):
@@ -94,7 +95,7 @@ class UserPlaylistView(generics.ListAPIView):
     ordering_fields = ['date_created']
     ordering = ordering_fields
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet:
         return PlayList.objects.filter(created_by=self.request.user)
 
 
@@ -108,3 +109,34 @@ class PlayListCategoryListView(generics.ListAPIView):
     search_fields = ['title']
     ordering_fields = ['date_created']
     ordering = ordering_fields
+
+
+class PlayListCommentListView(generics.ListCreateAPIView):
+    """Retrieve all non reply comments associated with a specific PlayList"""
+    serializer_class = CommentSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+    filter_backends = [OrderingFilter, SearchFilter, DjangoFilterBackend]
+    filterset_fields = ['date_created']
+    search_fields = ['content']
+    ordering_fields = ['date_created']
+    ordering = ordering_fields
+    lookup_field = 'id'
+
+    def get_object(self) -> PlayList:
+        return get_object_or_404(PlayList, id=self.kwargs['id'])
+
+    def get_queryset(self) -> QuerySet:
+        return Comment.objects.filter(playlist=self.get_object(), replying=None)
+
+
+class CommentDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = CommentSerializer
+    queryset = Comment.objects.all()
+    permission_classes = (permissions.IsAuthenticated, IsCreatorOrReadOnly)
+
+    def get_object(self) -> Comment:
+        playlist_id = self.kwargs.get('id')
+        comment_id = self.kwargs.get('comment_id')
+        obj = get_object_or_404(Comment, id=comment_id,
+                                playlist__id=playlist_id)
+        return obj
