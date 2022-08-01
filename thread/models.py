@@ -44,7 +44,7 @@ class Like(models.Model):
         ]
 
     def __str__(self) -> str:
-        return f'user {self.created_by.email} liked thread {self.thread.id}'
+        return f'user {self.created_by.email} liked thread {self.playlist.id}'
 
     def save(
             self,
@@ -71,8 +71,8 @@ class Comment(models.Model):
         'PlayList', on_delete=models.CASCADE, related_name='comments')
     replying = models.ForeignKey(
         'Comment', on_delete=models.CASCADE, related_name='replies', null=True)
-    content = models.TextField(default='')
-    attachment = models.ManyToManyField(Attachment)
+    content = models.TextField(null=False)
+    attachments = models.ManyToManyField(Attachment, blank=True)
     date_created = models.DateTimeField(auto_now=True)
 
     class Meta:
