@@ -1,0 +1,58 @@
+version: '3.9'
+
+services:
+  web:
+    build:
+      context: .
+    expose:
+      - 8000
+    volumes:
+      - .:/backend
+    command: >
+      sh -c "
+        python manage.py wait_for_db &&
+        python manage.py migrate &&
+        daphne HabbitBackend.asgi:application --port 8000 --bind 0.0.0.0
+      "
+    env_file:
+      - ./.env
+
+    depends_on:
+      - db
+
+  db:
+    image: postgres:14
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432"
+    env_file:
+      - ./.env
+    restart: "on-failure"
+
+  redis:
+    image: redis:alpine
+
+  celery:
+    restart: always
+    build:
+      context: .
+    command: celery -A HabbitBackend worker -l info
+    volumes:
+      - .:/backend
+    env_file:
+      - ./.env
+    depends_on:
+      - db
+      - redis
+      - web
+
+  nginx:
+    build: ./nginx
+    ports:
+      - 8888:80
+    depends_on:
+      - web
+
+volumes:
+  pgdata:
