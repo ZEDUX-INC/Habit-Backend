@@ -38,8 +38,4 @@ SECURE_SSL_REDIRECT = True
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
-DATABASES = {
-    'default': dj_database_url.config(conn_max_age=1000)
-}
-
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
