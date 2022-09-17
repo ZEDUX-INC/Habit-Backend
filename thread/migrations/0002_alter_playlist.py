@@ -6,32 +6,34 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('thread', '0001_initial'),
+        ("thread", "0001_initial"),
     ]
 
     operations = [
         migrations.RemoveConstraint(
-            model_name='playlist',
-            name='name must be unqiue',
+            model_name="playlist",
+            name="name must be unqiue",
         ),
         migrations.RemoveConstraint(
-            model_name='playlistcategory',
-            name='title must be unqiue',
+            model_name="playlistcategory",
+            name="title must be unqiue",
         ),
         migrations.RenameField(
-            model_name='playlist',
-            old_name='name',
-            new_name='title',
+            model_name="playlist",
+            old_name="name",
+            new_name="title",
         ),
         migrations.AlterField(
-            model_name='playlistcategory',
-            name='title',
+            model_name="playlistcategory",
+            name="title",
             field=models.CharField(
-                db_index=True, default='', editable=False, max_length=120, unique=True),
+                db_index=True, default="", editable=False, max_length=120, unique=True
+            ),
         ),
         migrations.AddConstraint(
-            model_name='playlist',
+            model_name="playlist",
             constraint=models.UniqueConstraint(
-                fields=('title', 'created_by'), name='name must be unqiue'),
+                fields=("title", "created_by"), name="name must be unqiue"
+            ),
         ),
     ]

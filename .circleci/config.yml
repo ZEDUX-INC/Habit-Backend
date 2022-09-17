@@ -20,6 +20,7 @@ jobs:
                 name: Runing static tests
                 command: |
                     . venv/bin/activate
+                    mypy account thread
                     pre-commit run --all-files
             - run:
                 name: Running unit tests

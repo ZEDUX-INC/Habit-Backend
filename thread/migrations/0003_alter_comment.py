@@ -6,22 +6,22 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('thread', '0002_alter_playlist'),
+        ("thread", "0002_alter_playlist"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='comment',
-            name='attachment',
+            model_name="comment",
+            name="attachment",
         ),
         migrations.AddField(
-            model_name='comment',
-            name='attachments',
-            field=models.ManyToManyField(blank=True, to='thread.Attachment'),
+            model_name="comment",
+            name="attachments",
+            field=models.ManyToManyField(blank=True, to="thread.Attachment"),
         ),
         migrations.AlterField(
-            model_name='comment',
-            name='content',
+            model_name="comment",
+            name="content",
             field=models.TextField(),
         ),
     ]
