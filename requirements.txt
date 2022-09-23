@@ -1,5 +1,6 @@
 boto3==1.24.56
 celery==5.2.2
+cent==4.1.0
 daphne==3.0.2
 dj_database_url
 Django==3.2.2
