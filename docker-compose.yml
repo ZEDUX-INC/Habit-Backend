@@ -4,6 +4,7 @@ services:
   web:
     build:
       context: .
+    restart: always
     ports:
       - "8000:8000"
     volumes:
@@ -16,7 +17,6 @@ services:
         python manage.py runserver 0.0.0.0:8000"
     env_file:
       - ./.env
-
     depends_on:
       - db
 
@@ -28,10 +28,11 @@ services:
       - "5432"
     env_file:
       - ./.env
-    restart: "on-failure"
+    restart: always
 
   redis:
     image: redis:alpine
+    restart: always
 
   celery:
     restart: always
@@ -46,6 +47,20 @@ services:
       - db
       - redis
       - web
+
+  centrifugo:
+    container_name: centrifugo
+    image: centrifugo/centrifugo:v4
+    volumes:
+      - ./centrifugo/config.json:/centrifugo/config.json
+    command: centrifugo -c config.json
+    ports:
+      - "9000:9000"
+    restart: always
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
 
 volumes:
   pgdata:

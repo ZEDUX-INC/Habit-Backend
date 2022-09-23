@@ -8,6 +8,7 @@ services:
       - 8000
     volumes:
       - .:/backend
+    restart: always
     command: >
       sh -c "
         python manage.py wait_for_db &&
@@ -32,6 +33,7 @@ services:
 
   redis:
     image: redis:alpine
+    restart: always
 
   celery:
     restart: always
@@ -46,6 +48,20 @@ services:
       - db
       - redis
       - web
+
+  centrifugo:
+    container_name: centrifugo
+    image: centrifugo/centrifugo:v4
+    restart: always
+    volumes:
+      - ./centrifugo/config.json:/centrifugo/config.json
+    command: centrifugo -c config.json
+    ports:
+      - "9000"
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
 
   nginx:
     build: ./nginx
